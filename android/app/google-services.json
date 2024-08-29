@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "699991162085",
+    "project_id": "my-chat-project-new",
+    "storage_bucket": "my-chat-project-new.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:699991162085:android:5866e512c443e64078e80c",
+        "android_client_info": {
+          "package_name": "Com.nanak.chat_module"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBqfFYWL7DIQH4SRe62vSUrDO2zNA4fycI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
