@@ -17,13 +17,7 @@ class ChatHome extends StatefulWidget {
 class _ChatHomeState extends State<ChatHome> with WidgetsBindingObserver{
   FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   FirebaseFirestore _firstore =FirebaseFirestore.instance;
-  List<Map<String, String>> items = [
-    {"Email": "nanaks@gami.com", "lead": "N", "Name": "Nanak"},
-    {"Email": "sukh1@gami.com", "lead": "S", "Name": "Sukh"},
-    {"Email": "amita@gami.com", "lead": "A", "Name": "Amita"},
-    {"Email": "tinal@gami.com", "lead": "T", "Name": "Tinal"},
-    {"Email": "nandu@gami.com", "lead": "N", "Name": "Nandu"}
-  ];
+
   @override
   void initState() {
     // TODO: implement initState

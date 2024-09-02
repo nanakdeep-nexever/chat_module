@@ -5,12 +5,14 @@ import 'package:chat_module/Bloc/bloc_chat_bloc.dart';
 import 'package:chat_module/Bloc/bloc_chat_state.dart';
 import 'package:chat_module/Chat_Model/chatModel.dart';
 import 'package:chat_module/Chat_Model/enums.dart';
+import 'package:chat_module/Notification_handel/Notification_handle.dart';
 import 'package:chat_module/Screens/loginScreen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -32,6 +34,7 @@ class _MessagingPageState extends State<MessagingPage> {
   final TextEditingController _messageController = TextEditingController();
   final DateFormat _timeFormatter = DateFormat('HH:mm:ss');
   Timer? _typingTimer;
+
   updateLastM(String tosms, String from, String msg) async{
     try {
 
@@ -52,6 +55,17 @@ class _MessagingPageState extends State<MessagingPage> {
         doc.reference.update({'LastMessage': msg});
       }
 
+      QuerySnapshot FcmQuery = await FirebaseFirestore.instance
+          .collection('users')
+          .where('email', isEqualTo: tosms)
+          .get();
+
+      if(FcmQuery.docs.isNotEmpty){
+        DocumentSnapshot documentSnapshot = FcmQuery.docs.first;
+        String fcmToken = documentSnapshot.get('Fcm_token') as String;
+          NotificationHandler.sendNotification(FCM_token: fcmToken, title: "New Message", body: "$msg");
+      }
+
       print('Documents updated successfully');
     } catch (e) {
       print('Error updating documents: $e');
@@ -61,7 +75,7 @@ class _MessagingPageState extends State<MessagingPage> {
   Future<void> _sendMessage(String? from) async {
     if (_messageController.text.isNotEmpty) {
       try {
-        final message = Message(
+        final message = Message_Model(
           from: from!,
           to: widget.tosms,
           type: MessageType.text,
@@ -165,7 +179,7 @@ class _MessagingPageState extends State<MessagingPage> {
               ? MessageType.video
               : MessageType.document;
 
-      final message = Message(
+      final message = Message_Model(
         from: from!,
         to: widget.tosms,
         type: messageType,
@@ -423,7 +437,7 @@ class _MessagingPageState extends State<MessagingPage> {
       reverse: true,
       itemCount: messages?.length ?? 0,
       itemBuilder: (context, index) {
-        final message = Message.fromDocumentSnapshot(messages![index]);
+        final message = Message_Model.fromDocumentSnapshot(messages![index]);
         final messageId = messages[index].id;
 
         if ((_firebaseAuth.currentUser?.email == message.to ||

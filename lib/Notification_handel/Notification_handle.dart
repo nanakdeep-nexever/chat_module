@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:googleapis_auth/auth_io.dart';
@@ -82,7 +84,7 @@ class NotificationHandler {
     try {
       final response = await http.post(
         Uri.parse(
-            'https://fcm.googleapis.com/v1/projects/project-tracker-nk/messages:send'),
+            'https://fcm.googleapis.com/v1/projects/my-chat-project-new/messages:send'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $accessToken',
@@ -109,6 +111,10 @@ class NotificationHandler {
       if (_token != null) {
         if (kDebugMode) {
           print('Registration Token: $_token');
+          User? user =FirebaseAuth.instance?.currentUser;
+          if(user != null){
+            FirebaseFirestore.instance.collection('users').doc(user.uid).update({"Fcm_token": _token});
+          }
         }
       } else {
         print("Failed to get token");

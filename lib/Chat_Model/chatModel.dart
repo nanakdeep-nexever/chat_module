@@ -1,7 +1,7 @@
 import 'package:chat_module/Chat_Model/enums.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class Message {
+class Message_Model {
   final String from;
   final String to;
   final MessageType type;
@@ -10,7 +10,7 @@ class Message {
   final bool read;
   final Timestamp createdAt;
 
-  Message({
+  Message_Model({
     required this.from,
     required this.to,
     required this.type,
@@ -32,8 +32,8 @@ class Message {
     };
   }
 
-  factory Message.fromMap(Map<String, dynamic> map) {
-    return Message(
+  factory Message_Model.fromMap(Map<String, dynamic> map) {
+    return Message_Model(
       from: map['from'] as String? ?? '',
       to: map['to'] as String? ?? '',
       type: MessageType.values.firstWhere(
@@ -49,11 +49,11 @@ class Message {
     );
   }
 
-  factory Message.fromDocumentSnapshot(DocumentSnapshot doc) {
+  factory Message_Model.fromDocumentSnapshot(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>?;
     if (data == null) {
       throw Exception('Document data is null');
     }
-    return Message.fromMap(data);
+    return Message_Model.fromMap(data);
   }
 }
