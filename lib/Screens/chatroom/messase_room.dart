@@ -368,7 +368,41 @@ class _MessagingPageState extends State<MessagingPage> {
                         : CrossAxisAlignment.start,
                     children: [
                       if (message.type == MessageType.text)
-                        Text(message.content),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            border: Border.all(
+                              color:
+                                  Colors.white24, // Set the border color here
+                              width: 1.0, // Set the border width here
+                            ),
+                            borderRadius:
+                                BorderRadius.only(topLeft: Radius.circular(22)),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: isSentByCurrentUser
+                                ? BorderRadius.only(
+                                    topLeft: Radius.circular(20))
+                                : BorderRadius.only(
+                                    topRight: Radius.circular(20)),
+                            child: Padding(
+                              padding: EdgeInsets.all(14),
+                              child: Container(
+                                child: Text(
+                                  message.content,
+                                  textAlign: isSentByCurrentUser
+                                      ? TextAlign.end
+                                      : TextAlign.start,
+                                  style: TextStyle(
+                                      color: Colors.black,
+                                      wordSpacing: 2,
+                                      letterSpacing: .5),
+                                  overflow: TextOverflow.values.last,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
                       if (message.type == MessageType.image)
                         Image.network(
                           message.content,
