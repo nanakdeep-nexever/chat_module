@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:bloc/bloc.dart';
 import 'package:chat_module/Bloc/bloc_chat_state.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:equatable/equatable.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -49,7 +50,9 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
   }
 
   FutureOr<void> _signout(SignOut event, Emitter<LoginState> emit) {
-    _firebaseAuth.signOut();
+    FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser?.uid).update({'Fcm_token':""}).then((value){_firebaseAuth.signOut();});
+
+
     emit(AuthUnauthenticated());
   }
 }
