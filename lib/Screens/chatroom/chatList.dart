@@ -75,9 +75,7 @@ class _ChatHomeState extends State<ChatHome> with WidgetsBindingObserver{
           return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
             stream: _firstore.collection('users').snapshots(),
             builder: (context, snapshot) {
-              if (snapshot.hasError) {
-                return Center(child: Text('Error: ${snapshot.error}'));
-              }
+
               if (!snapshot.hasData || snapshot.data == null || snapshot.data!.docs.isEmpty) {
                 return Center(child: Text('No users found.'));
               }
@@ -108,22 +106,34 @@ class _ChatHomeState extends State<ChatHome> with WidgetsBindingObserver{
                       child: ListTile(
                         title: Text(name ?? ''),
                         subtitle: user['LastMessage'].toString().isNotEmpty
-                            ? user['typing']==true ? const Text('typing....'): Text('${user['LastMessage']}')
-                            : user['typing']==true ? const Text('typing....'):null,
-                        trailing: StreamBuilder(stream: _firstore.collection('messages').where('read', isEqualTo: false).where('from', isEqualTo: email).snapshots(),builder: (context, snapshot){
-                          final reads = snapshot.data!.docs;
-                          if(reads.length == 0){
-                            return Text('');
-                          }else{
-                            return Text('${reads.length}');
-                          }
-
-                        }),
+                            ? user['typing'] == true
+                            ? const Text('typing....')
+                            : Text('${user['LastMessage']}')
+                            : user['typing'] == true
+                            ? const Text('typing....')
+                            : null,
+                        trailing: StreamBuilder<QuerySnapshot>(
+                          stream: _firstore.collection('messages')
+                              .where('read', isEqualTo: false)
+                              .where('from', isEqualTo: email)
+                              .snapshots(),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState == ConnectionState.waiting) {
+                              return const Text('Loading...');
+                            }
+                            if (snapshot.hasError) {
+                              return const Text('Error');
+                            }
+                            final reads = snapshot.data?.docs ?? [];
+                            return Text(reads.isEmpty ? '' : '${reads.length}');
+                          },
+                        ),
                       ),
                     );
                   }
                 },
               );
+
             },
           );
         },
