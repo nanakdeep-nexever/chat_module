@@ -32,7 +32,32 @@ class _MessagingPageState extends State<MessagingPage> {
   final TextEditingController _messageController = TextEditingController();
   final DateFormat _timeFormatter = DateFormat('HH:mm:ss');
   Timer? _typingTimer;
+  updateLastM(String tosms, String from, String msg) async{
+    try {
 
+      QuerySnapshot tosmasupdate = await FirebaseFirestore.instance
+          .collection('users')
+          .where('email', isEqualTo: tosms)
+          .get();
+      QuerySnapshot fromsmsupdate = await FirebaseFirestore.instance
+          .collection('users')
+          .where('email', isEqualTo: from)
+          .get();
+
+      for (QueryDocumentSnapshot doc in fromsmsupdate.docs) {
+        doc.reference.update({'LastMessage': msg});
+      }
+
+      for (QueryDocumentSnapshot doc in tosmasupdate.docs) {
+        doc.reference.update({'LastMessage': msg});
+      }
+
+      print('Documents updated successfully');
+    } catch (e) {
+      print('Error updating documents: $e');
+    }
+
+  }
   Future<void> _sendMessage(String? from) async {
     if (_messageController.text.isNotEmpty) {
       try {
@@ -42,9 +67,11 @@ class _MessagingPageState extends State<MessagingPage> {
           type: MessageType.text,
           content: _messageController.text,
           createdAt: Timestamp.now(),
+          read: false
         );
 
         await _firestore.collection('messages').add(message.toMap());
+        await updateLastM(widget.tosms, from, _messageController.text);
         _messageController.clear();
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -61,6 +88,31 @@ class _MessagingPageState extends State<MessagingPage> {
     }
   }
 
+  Future<void> updateMessages() async {
+    final toSms = widget.tosms;
+
+    try {
+
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection('messages')
+          .where('from', isEqualTo: toSms)
+          .get();
+
+
+      for (QueryDocumentSnapshot doc in querySnapshot.docs) {
+         doc.reference.update({'read': true});
+      }
+
+      print('Documents updated successfully');
+    } catch (e) {
+      print('Error updating documents: $e');
+    }
+  }
+@override
+  void initState() {
+    updateMessages();
+    super.initState();
+  }
 
 
   @override
@@ -120,6 +172,7 @@ class _MessagingPageState extends State<MessagingPage> {
         content: downloadUrl,
         fileName: fileName,
         createdAt: Timestamp.now(),
+        read: false
       );
 
       await _firestore.collection('messages').add(message.toMap());
@@ -513,6 +566,8 @@ class _MessagingPageState extends State<MessagingPage> {
     );
   }
 }
+
+
 
 
 

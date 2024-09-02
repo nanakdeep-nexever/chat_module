@@ -4,22 +4,132 @@ import 'package:chat_module/Screens/loginScreen.dart';
 import 'package:chat_module/Theme_data/chat_theme.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:get_it/get_it.dart';
 
+import 'Bloc/message_send.dart';
+import 'Notification_handel/Notification_handle.dart';
 import 'firebase_options.dart';
+
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+FlutterLocalNotificationsPlugin();
+
+final locator = GetIt.instance;
+NotificationHandler notificatioHendler = NotificationHandler();
+
+void setupLocator() {
+  locator.registerLazySingleton(() => MessagingBloc());
+}
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+  ]);
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  const AndroidInitializationSettings initializationSettingsAndroid =
+  AndroidInitializationSettings('@mipmap/ic_launcher');
+
+  final InitializationSettings initializationSettings = InitializationSettings(
+    android: initializationSettingsAndroid,
+    iOS: null, // iOS settings can be added here
+  );
+
+  await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+
+  setupLocator();
+
+  await NotificationHandler.init();
+  FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
 
   runApp(MyApp());
 }
 
-class MyApp extends StatelessWidget {
+void _handleForegroundMessage(RemoteMessage message) {
+  if (message.notification != null) {
+    _showNotification(
+      title: message.notification?.title,
+      body: message.notification?.body,
+    );
+  }
+}
+
+Future<void> _showNotification({String? title, String? body}) async {
+  const AndroidNotificationDetails androidPlatformChannelSpecifics =
+  AndroidNotificationDetails(
+    'your_channel_id',
+    'your_channel_name',
+    channelDescription: 'your_channel_description',
+    importance: Importance.max,
+    priority: Priority.high,
+    ticker: 'ticker',
+  );
+
+  const NotificationDetails platformChannelSpecifics = NotificationDetails(
+    android: androidPlatformChannelSpecifics,
+    iOS: null, // iOS settings can be added here
+  );
+
+  await flutterLocalNotificationsPlugin.show(
+    0,
+    title,
+    body,
+    platformChannelSpecifics,
+    payload: 'item x',
+  );
+}
+
+
+
+
+class MyApp extends StatefulWidget {
   MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  late MessagingBloc _messagingBloc;
+
+  @override
+  void initState() {
+    _messagingBloc = locator<MessagingBloc>();
+    _messagingBloc.messageStream.listen((message) {
+      print('object on Screen $message');
+      _messagingBloc.addstream(message);
+    });
+    setupbackground();
+    super.initState();
+  }
+
+  void _handleMessage(RemoteMessage message) {
+    _messagingBloc.addstream(message);
+
+  }
+
+  void setupbackground() async {
+    print("trigrred");
+    RemoteMessage? initialMessage =
+    await FirebaseMessaging.instance.getInitialMessage();
+    if (initialMessage != null) {
+      print("not empty");
+      _handleMessage(initialMessage);
+    }
+    FirebaseMessaging.onMessageOpenedApp.listen(_handleMessage);
+  }
+
+  @override
+  void dispose() {
+    _messagingBloc.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

@@ -81,9 +81,6 @@ class _ChatHomeState extends State<ChatHome> with WidgetsBindingObserver{
           return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
             stream: _firstore.collection('users').snapshots(),
             builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return Center(child: CircularProgressIndicator());
-              }
               if (snapshot.hasError) {
                 return Center(child: Text('Error: ${snapshot.error}'));
               }
@@ -116,9 +113,18 @@ class _ChatHomeState extends State<ChatHome> with WidgetsBindingObserver{
                       },
                       child: ListTile(
                         title: Text(name ?? ''),
-                        subtitle: user['status'] == true
-                            ? user['typing']==true ? Text('typing....'):Text('online')
-                            : null,
+                        subtitle: user['LastMessage'].toString().isNotEmpty
+                            ? user['typing']==true ? const Text('typing....'): Text('${user['LastMessage']}')
+                            : user['typing']==true ? const Text('typing....'):null,
+                        trailing: StreamBuilder(stream: _firstore.collection('messages').where('read', isEqualTo: false).where('from', isEqualTo: email).snapshots(),builder: (context, snapshot){
+                          final reads = snapshot.data!.docs;
+                          if(reads.length == 0){
+                            return Text('');
+                          }else{
+                            return Text('${reads.length}');
+                          }
+
+                        }),
                       ),
                     );
                   }

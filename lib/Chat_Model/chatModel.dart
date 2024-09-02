@@ -7,6 +7,7 @@ class Message {
   final MessageType type;
   final String content;
   final String fileName;
+  final bool read;
   final Timestamp createdAt;
 
   Message({
@@ -15,6 +16,7 @@ class Message {
     required this.type,
     required this.content,
     this.fileName = "",
+    required this.read,
     required this.createdAt,
   });
 
@@ -25,6 +27,7 @@ class Message {
       'type': type.toString(),
       'content': content,
       'fileName': fileName,
+      'read': read,
       'createdAt': createdAt,
     };
   }
@@ -42,6 +45,7 @@ class Message {
       content: map['content'] as String? ?? '',
       createdAt: map['createdAt'] as Timestamp? ?? Timestamp.now(),
       fileName: map['fileName'] as String? ?? '',
+      read: map['read'] as bool? ?? false
     );
   }
 
