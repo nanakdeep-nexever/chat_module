@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:chat_module/Bloc/bloc_chat_bloc.dart';
@@ -30,6 +31,7 @@ class _MessagingPageState extends State<MessagingPage> {
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   final TextEditingController _messageController = TextEditingController();
   final DateFormat _timeFormatter = DateFormat('HH:mm:ss');
+  Timer? _typingTimer;
 
   Future<void> _sendMessage(String? from) async {
     if (_messageController.text.isNotEmpty) {
@@ -50,6 +52,21 @@ class _MessagingPageState extends State<MessagingPage> {
         );
       }
     }
+  }
+  void _setTyping(bool status) async {
+    try {
+      await _firestore.collection('users').doc(_firebaseAuth.currentUser!.uid).update({'typing': status});
+    } catch (e) {
+      print('Error updating typing status: $e');
+    }
+  }
+
+
+
+  @override
+  void dispose(){
+    _typingTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> uploadMediaAndSaveReference(String? from) async {
@@ -113,7 +130,9 @@ class _MessagingPageState extends State<MessagingPage> {
       );
     }
   }
-
+  void setTyping(bool status) {
+    _firestore.collection('users').doc(_firebaseAuth.currentUser!.uid).update({'typing' : status});
+  }
   Future<MediaType?> _showMediaSelectionDialog() async {
     return showDialog<MediaType>(
       context: context,
@@ -223,7 +242,34 @@ class _MessagingPageState extends State<MessagingPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Messaging App'),
+        title: StreamBuilder(stream: FirebaseFirestore.instance.collection("users").where('email', isEqualTo: widget.tosms).snapshots(),
+            builder: (context, snapshot){
+              final users = snapshot.data?.docs;
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Center(child: CircularProgressIndicator());
+              }
+              if (snapshot.hasError) {
+                return Center(child: Text('Error: ${snapshot.error}'));
+              }
+              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                return Center(child: Text('No users found.'));
+              }
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(users![0]['name'].toString()),
+                  if(users![0]['status'])...[
+                    if(users![0]['typing'])...[
+                      Text('typing...'),
+                    ]else...[
+                      Text('online')
+                    ]
+                  ]
+                ],
+              );
+              
+            }),
+
         actions: [
           IconButton(
             onPressed: () {
@@ -290,6 +336,18 @@ class _MessagingPageState extends State<MessagingPage> {
           Expanded(
             child: TextField(
               controller: _messageController,
+              onChanged: (string){
+                if (_typingTimer?.isActive ?? false) _typingTimer!.cancel();
+
+
+                _setTyping(true);
+
+
+                _typingTimer = Timer(Duration(seconds: 1), () {
+                  _setTyping(false);
+                });
+              },
+
               decoration: InputDecoration(
                 labelText: 'Enter your message...',
               ),
@@ -455,6 +513,8 @@ class _MessagingPageState extends State<MessagingPage> {
     );
   }
 }
+
+
 
 class VideoPlayerWidget extends StatefulWidget {
   final String url;

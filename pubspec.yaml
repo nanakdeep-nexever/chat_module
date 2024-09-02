@@ -52,6 +52,8 @@ dependencies:
   video_player: ^2.9.1
   file_picker: ^5.2.1
   webview_flutter: ^4.8.0
+  firebase_messaging: ^14.9.4
+  googleapis_auth: ^1.6.0
 
 dev_dependencies:
   flutter_test:

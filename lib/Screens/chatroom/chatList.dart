@@ -2,6 +2,7 @@ import 'package:chat_module/Bloc/bloc_chat_bloc.dart';
 import 'package:chat_module/Bloc/bloc_chat_state.dart';
 import 'package:chat_module/Screens/chatroom/messase_room.dart';
 import 'package:chat_module/Screens/loginScreen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -13,8 +14,9 @@ class ChatHome extends StatefulWidget {
   State<ChatHome> createState() => _ChatHomeState();
 }
 
-class _ChatHomeState extends State<ChatHome> {
+class _ChatHomeState extends State<ChatHome> with WidgetsBindingObserver{
   FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+  FirebaseFirestore _firstore =FirebaseFirestore.instance;
   List<Map<String, String>> items = [
     {"Email": "nanaks@gami.com", "lead": "N", "Name": "Nanak"},
     {"Email": "sukh1@gami.com", "lead": "S", "Name": "Sukh"},
@@ -22,10 +24,38 @@ class _ChatHomeState extends State<ChatHome> {
     {"Email": "tinal@gami.com", "lead": "T", "Name": "Tinal"},
     {"Email": "nandu@gami.com", "lead": "N", "Name": "Nandu"}
   ];
+  @override
+  void initState() {
+    // TODO: implement initState
+    WidgetsBinding.instance.addObserver(this);
+    super.initState();
+  }
+
+  void setStatus(bool status)  {
+     FirebaseFirestore.instance
+        .collection("users")
+        .doc(FirebaseAuth.instance.currentUser!.uid)
+        .update({"status": status});
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed) {
+      setStatus(true);
+    } else {
+      setStatus(false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    int Length_l = items.length;
     return Scaffold(
       appBar: AppBar(
         title: Text('Chat Home'),
@@ -48,34 +78,52 @@ class _ChatHomeState extends State<ChatHome> {
           }
         },
         builder: (context, state) {
-          return ListView.builder(
-            itemCount: Length_l,
-            itemBuilder: (context, index) {
-              final item = items[index];
-              if (item["Email"] ==
-                  _firebaseAuth.currentUser?.email.toString()) {
-                return ListTile(
-                  title: Text(item["Name"] ?? ''),
-                  leading: Text(item["lead"] ?? ''),
-                );
-              } else {
-                return GestureDetector(
-                  onTap: () {
-                    String Name = item["Name"].toString();
-                    String tosms = item["Email"].toString();
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => MessagingPage(tosms),
+          return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+            stream: _firstore.collection('users').snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Center(child: CircularProgressIndicator());
+              }
+              if (snapshot.hasError) {
+                return Center(child: Text('Error: ${snapshot.error}'));
+              }
+              if (!snapshot.hasData || snapshot.data == null || snapshot.data!.docs.isEmpty) {
+                return Center(child: Text('No users found.'));
+              }
+
+              final users = snapshot.data!.docs;
+
+              return ListView.builder(
+                itemCount: users.length,
+                itemBuilder: (context, index) {
+                  final user = users[index].data();
+                  final name = user['name'] as String?;
+                  final email = user['email'] as String?;
+
+                  if (email == _firebaseAuth.currentUser?.email) {
+                    return ListTile(
+                      title: Text(name ?? ''),
+                    );
+                  } else {
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => MessagingPage(email ?? ''),
+                          ),
+                        );
+                      },
+                      child: ListTile(
+                        title: Text(name ?? ''),
+                        subtitle: user['status'] == true
+                            ? user['typing']==true ? Text('typing....'):Text('online')
+                            : null,
                       ),
                     );
-                  },
-                  child: ListTile(
-                    title: Text(item["Name"] ?? ''),
-                    leading: Text(item["lead"] ?? ''),
-                  ),
-                );
-              }
+                  }
+                },
+              );
             },
           );
         },
