@@ -33,12 +33,10 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
         email: event.email,
         password: event.password,
       );
-      if (userCredential != null) {
-        FirebaseFirestore.instance
-            .collection('users')
-            .doc(FirebaseAuth.instance.currentUser?.uid)
-            .update({'Fcm_token': NotificationHandler.token});
-      }
+      FirebaseFirestore.instance
+          .collection('users')
+          .doc(FirebaseAuth.instance.currentUser?.uid)
+          .update({'Fcm_token': NotificationHandler.token, 'status': true});
       emit(AuthAuthenticated(user: userCredential.user));
     } catch (e) {
       emit(AuthError(e.toString()));
@@ -50,7 +48,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
     try {
       emit(AuthLoading());
       final UserCredential userCredential =
-      await _firebaseAuth.createUserWithEmailAndPassword(
+          await _firebaseAuth.createUserWithEmailAndPassword(
         email: event.email,
         password: event.password,
       );
@@ -76,7 +74,6 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
     }
   }
 
-
   Future<void> _signOut(SignOut event, Emitter<LoginState> emit) async {
     try {
       final uid = FirebaseAuth.instance.currentUser?.uid;
@@ -84,7 +81,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
         await FirebaseFirestore.instance
             .collection('users')
             .doc(uid)
-            .update('Fcm_token': "",'on_screen':"",'status': false});
+            .update({'Fcm_token': "", 'on_screen': "", 'status': false});
         await _firebaseAuth.signOut();
       }
       emit(AuthUnauthenticated());
@@ -112,7 +109,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
     try {
       emit(AuthLoading());
 
-      if (event.imagePath == null || event.imagePath.isEmpty) {
+      if (event.imagePath.isEmpty) {
         emit(AuthError('No image path provided'));
         return;
       }

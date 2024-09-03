@@ -451,7 +451,7 @@ class _MessagingPageState extends State<MessagingPage> {
                   _setTyping(false);
                 });
               },
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Enter your message...',
               ),
             ),
@@ -616,7 +616,6 @@ class _MessagingPageState extends State<MessagingPage> {
     );
   }
 }
-
 
 class VideoPlayerWidget extends StatefulWidget {
   final String url;
