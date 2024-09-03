@@ -34,7 +34,9 @@ class _MessagingPageState extends State<MessagingPage> {
   final DateFormat _timeFormatter = DateFormat('HH:mm');
   Timer? _typingTimer;
 
-  updateLastM(String tosms, String from, String msg) async {
+  updateLastM(String tosms, String from, String? msg, String? imgurl) async {
+    String onScreenStatus = '';
+
     try {
       QuerySnapshot tosmasupdate = await FirebaseFirestore.instance
           .collection('users')
@@ -46,23 +48,39 @@ class _MessagingPageState extends State<MessagingPage> {
           .get();
 
       for (QueryDocumentSnapshot doc in fromsmsupdate.docs) {
-        doc.reference.update({'LastMessage': msg});
+        doc.reference.update({'LastMessage': msg ?? ''});
       }
 
       for (QueryDocumentSnapshot doc in tosmasupdate.docs) {
-        doc.reference.update({'LastMessage': msg});
+        doc.reference.update({'LastMessage': msg ?? ''});
       }
 
-      QuerySnapshot FcmQuery = await FirebaseFirestore.instance
+      final userDoc = _firestore
           .collection('users')
-          .where('email', isEqualTo: tosms)
-          .get();
+          .where('email', isEqualTo: widget.tosms);
+      final snapshot = await userDoc.get();
+      if (snapshot.docs.isNotEmpty) {
+        final doc = snapshot.docs.first;
+        onScreenStatus = doc.get('on_screen');
+      }
+      print(
+          "current user opencheck ${FirebaseAuth.instance.currentUser?.email}  and Reciver ${onScreenStatus}");
+      if (onScreenStatus.toString() !=
+          FirebaseAuth.instance.currentUser?.email.toString()) {
+        QuerySnapshot FcmQuery = await FirebaseFirestore.instance
+            .collection('users')
+            .where('email', isEqualTo: tosms)
+            .get();
 
-      if (FcmQuery.docs.isNotEmpty) {
-        DocumentSnapshot documentSnapshot = FcmQuery.docs.first;
-        String fcmToken = documentSnapshot.get('Fcm_token') as String;
-        NotificationHandler.sendNotification(
-            FCM_token: fcmToken, title: "New Message", body: msg);
+        if (FcmQuery.docs.isNotEmpty) {
+          DocumentSnapshot documentSnapshot = FcmQuery.docs.first;
+          String fcmToken = documentSnapshot.get('Fcm_token') as String;
+          NotificationHandler.sendNotification(
+              FCM_token: fcmToken,
+              title: "New Message",
+              body: "$msg",
+              data: {'imageUrl': imgurl ?? ''});
+        }
       }
 
       print('Documents updated successfully');
@@ -83,7 +101,7 @@ class _MessagingPageState extends State<MessagingPage> {
             read: false);
 
         await _firestore.collection('messages').add(message.toMap());
-        await updateLastM(widget.tosms, from, _messageController.text);
+        await updateLastM(widget.tosms, from, _messageController.text, '');
         _messageController.clear();
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -124,14 +142,9 @@ class _MessagingPageState extends State<MessagingPage> {
   }
 
   @override
-  void initState() {
-    updateMessages();
-    super.initState();
-  }
-
-  @override
   void dispose() {
     _typingTimer?.cancel();
+    _updateOnScreenStatus("");
     super.dispose();
   }
 
@@ -146,7 +159,7 @@ class _MessagingPageState extends State<MessagingPage> {
     final status = await Permission.camera.request();
     if (mediaType == MediaType.image && !status.isGranted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Camera permission denied")),
+        SnackBar(content: Text("Camera permission denied")),
       );
       return;
     }
@@ -158,7 +171,8 @@ class _MessagingPageState extends State<MessagingPage> {
           ? await picker.pickImage(source: source)
           : mediaType == MediaType.video
               ? await picker.pickVideo(source: source)
-              : await picker.pickVideo(source: source);
+              : await picker.pickVideo(
+                  source: source); // Handle document uploads if applicable
 
       if (pickedFile == null) {
         return;
@@ -188,6 +202,7 @@ class _MessagingPageState extends State<MessagingPage> {
           read: false);
 
       await _firestore.collection('messages').add(message.toMap());
+      updateLastM(widget.tosms, from.toString(), 'image', downloadUrl);
       _messageController.clear();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -201,6 +216,28 @@ class _MessagingPageState extends State<MessagingPage> {
         .collection('users')
         .doc(_firebaseAuth.currentUser!.uid)
         .update({'typing': status});
+  }
+
+  Future<void> _updateOnScreenStatus(String status) async {
+    try {
+      final userDoc = _firestore
+          .collection('users')
+          .where('email', isEqualTo: _firebaseAuth.currentUser!.email);
+      final snapshot = await userDoc.get();
+
+      for (var doc in snapshot.docs) {
+        await doc.reference.update({'on_screen': status});
+      }
+    } catch (e) {
+      print('Error updating on_screen status: $e');
+    }
+  }
+
+  @override
+  void initState() {
+    updateMessages();
+    _updateOnScreenStatus(widget.tosms);
+    super.initState();
   }
 
   Future<MediaType?> _showMediaSelectionDialog() async {
@@ -585,7 +622,7 @@ class _MessagingPageState extends State<MessagingPage> {
                             border: Border.all(
                               color: Colors.white24,
                               width: 1.0,
-                            ), // Handle emoji icon press
+                            ),
                             borderRadius: const BorderRadius.only(
                                 topLeft: Radius.circular(22)),
                           ),
