@@ -107,6 +107,7 @@ class _MessagingPageState extends State<MessagingPage> {
 
     try {
 
+
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
           .collection('messages')
           .where('from', isEqualTo: toSms)

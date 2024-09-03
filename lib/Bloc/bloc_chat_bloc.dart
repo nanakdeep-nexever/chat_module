@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:bloc/bloc.dart';
 import 'package:chat_module/Bloc/bloc_chat_state.dart';
+import 'package:chat_module/Notification_handel/Notification_handle.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:equatable/equatable.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -26,6 +27,9 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
         email: event.email,
         password: event.password,
       );
+      if(userCredential != null){
+        FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser?.uid).update({'Fcm_token':NotificationHandler.token});
+      }
       emit(AuthAuthenticated(user: userCredential.user));
     } catch (e) {
       emit(AuthError(e.toString()));
@@ -41,6 +45,9 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
         email: event.email,
         password: event.password,
       );
+      if(userCredential != null){
+        FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser?.uid).update({'Fcm_token':NotificationHandler.token});
+      }
       emit(
         AuthAuthenticated(user: userCredential.user),
       );

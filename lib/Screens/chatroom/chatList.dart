@@ -20,7 +20,7 @@ class _ChatHomeState extends State<ChatHome> with WidgetsBindingObserver{
 
   @override
   void initState() {
-    // TODO: implement initState
+
     WidgetsBinding.instance.addObserver(this);
     super.initState();
   }
@@ -43,7 +43,7 @@ class _ChatHomeState extends State<ChatHome> with WidgetsBindingObserver{
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.resumed) {
       setStatus(true);
-    } else {
+    } else{
       setStatus(false);
     }
   }
@@ -51,7 +51,8 @@ class _ChatHomeState extends State<ChatHome> with WidgetsBindingObserver{
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
+
+      appBar: AppBar(automaticallyImplyLeading: false,
         title: Text('Chat Home'),
         actions: [
           IconButton(
@@ -73,7 +74,7 @@ class _ChatHomeState extends State<ChatHome> with WidgetsBindingObserver{
         },
         builder: (context, state) {
           return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-            stream: _firstore.collection('users').snapshots(),
+            stream: _firstore.collection('users').where("email", isNotEqualTo: _firebaseAuth.currentUser?.email).snapshots(),
             builder: (context, snapshot) {
 
               if (!snapshot.hasData || snapshot.data == null || snapshot.data!.docs.isEmpty) {
@@ -89,11 +90,7 @@ class _ChatHomeState extends State<ChatHome> with WidgetsBindingObserver{
                   final name = user['name'] as String?;
                   final email = user['email'] as String?;
 
-                  if (email == _firebaseAuth.currentUser?.email) {
-                    return ListTile(
-                      title: Text(name ?? ''),
-                    );
-                  } else {
+
                     return GestureDetector(
                       onTap: () {
                         Navigator.push(
@@ -130,7 +127,7 @@ class _ChatHomeState extends State<ChatHome> with WidgetsBindingObserver{
                         ),
                       ),
                     );
-                  }
+
                 },
               );
 
