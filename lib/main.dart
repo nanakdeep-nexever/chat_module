@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:chat_module/Bloc/bloc_chat_bloc.dart';
 import 'package:chat_module/Screens/chatroom/chatList.dart';
 import 'package:chat_module/Screens/loginScreen.dart';
@@ -10,7 +12,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get_it/get_it.dart';
-
+import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
 import 'Bloc/message_send.dart';
 import 'Notification_handel/Notification_handle.dart';
 import 'firebase_options.dart';
@@ -53,33 +56,56 @@ Future<void> main() async {
 
 void _handleForegroundMessage(RemoteMessage message) {
   if (message.notification != null) {
-    _showNotification(
-      title: message.notification?.title,
-      body: message.notification?.body,
+    _showNotification(message
     );
   }
 }
+ Future<String> _downloadAndSaveFile(
+String url, String fileName) async {
+if (url.isNotEmpty == true) {
+final Directory directory = await getApplicationDocumentsDirectory();
+final String filePath = '${directory.path}/$fileName';
+final http.Response response = await http.get(Uri.parse(url));
+final File file = File(filePath);
+await file.writeAsBytes(response.bodyBytes);
+return filePath;
+}
+return "";
+}
 
-Future<void> _showNotification({String? title, String? body}) async {
-  const AndroidNotificationDetails androidPlatformChannelSpecifics =
+
+Future<void> _showNotification(RemoteMessage message) async {
+  final String? imgUrl = message.data['imageUrl'] ?? 'https://www.pushengage.com/wp-content/uploads/2023/06/In-App-Notification-Examples.png';
+  String? imagePath;
+
+  if (imgUrl != null && imgUrl.isNotEmpty) {
+
+    imagePath = await _downloadAndSaveFile(imgUrl, 'notification_image.jpg');
+  }
+   AndroidNotificationDetails androidPlatformChannelSpecifics =
   AndroidNotificationDetails(
     'your_channel_id',
     'your_channel_name',
+    largeIcon: imagePath != null
+        ? FilePathAndroidBitmap(imagePath)
+        : null,
     channelDescription: 'your_channel_description',
     importance: Importance.max,
     priority: Priority.high,
     ticker: 'ticker',
+
   );
 
-  const NotificationDetails platformChannelSpecifics = NotificationDetails(
+   NotificationDetails platformChannelSpecifics = NotificationDetails(
     android: androidPlatformChannelSpecifics,
     iOS: null, // iOS settings can be added here
   );
 
   await flutterLocalNotificationsPlugin.show(
     0,
-    title,
-    body,
+    message.notification?.title.toString(),
+    message.notification?.body.toString(),
+
     platformChannelSpecifics,
     payload: 'item x',
   );

@@ -33,10 +33,10 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
         email: event.email,
         password: event.password,
       );
-      if (userCredential.user != null) {
-        await FirebaseFirestore.instance
+      if (userCredential != null) {
+        FirebaseFirestore.instance
             .collection('users')
-            .doc(userCredential.user!.uid)
+            .doc(FirebaseAuth.instance.currentUser?.uid)
             .update({'Fcm_token': NotificationHandler.token});
       }
       emit(AuthAuthenticated(user: userCredential.user));
@@ -50,7 +50,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
     try {
       emit(AuthLoading());
       final UserCredential userCredential =
-          await _firebaseAuth.createUserWithEmailAndPassword(
+      await _firebaseAuth.createUserWithEmailAndPassword(
         email: event.email,
         password: event.password,
       );
@@ -76,6 +76,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
     }
   }
 
+
   Future<void> _signOut(SignOut event, Emitter<LoginState> emit) async {
     try {
       final uid = FirebaseAuth.instance.currentUser?.uid;
@@ -83,7 +84,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
         await FirebaseFirestore.instance
             .collection('users')
             .doc(uid)
-            .update({'Fcm_token': ""});
+            .update('Fcm_token': "",'on_screen':"",'status': false});
         await _firebaseAuth.signOut();
       }
       emit(AuthUnauthenticated());
