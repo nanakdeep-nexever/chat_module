@@ -14,9 +14,9 @@ class ChatHome extends StatefulWidget {
   State<ChatHome> createState() => _ChatHomeState();
 }
 
-class _ChatHomeState extends State<ChatHome> with WidgetsBindingObserver{
+class _ChatHomeState extends State<ChatHome> with WidgetsBindingObserver {
   FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
-  FirebaseFirestore _firstore =FirebaseFirestore.instance;
+  FirebaseFirestore _firstore = FirebaseFirestore.instance;
 
   @override
   void initState() {
@@ -25,8 +25,8 @@ class _ChatHomeState extends State<ChatHome> with WidgetsBindingObserver{
     super.initState();
   }
 
-  void setStatus(bool status)  {
-     FirebaseFirestore.instance
+  void setStatus(bool status) {
+    FirebaseFirestore.instance
         .collection("users")
         .doc(FirebaseAuth.instance.currentUser!.uid)
         .update({"status": status});
@@ -73,10 +73,15 @@ class _ChatHomeState extends State<ChatHome> with WidgetsBindingObserver{
         },
         builder: (context, state) {
           return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-            stream: _firstore.collection('users').snapshots(),
+            stream: _firstore
+                .collection('users')
+                .where("email",
+                    isNotEqualTo: FirebaseAuth.instance.currentUser!.email)
+                .snapshots(),
             builder: (context, snapshot) {
-
-              if (!snapshot.hasData || snapshot.data == null || snapshot.data!.docs.isEmpty) {
+              if (!snapshot.hasData ||
+                  snapshot.data == null ||
+                  snapshot.data!.docs.isEmpty) {
                 return Center(child: Text('No users found.'));
               }
 
@@ -107,18 +112,20 @@ class _ChatHomeState extends State<ChatHome> with WidgetsBindingObserver{
                         title: Text(name ?? ''),
                         subtitle: user['LastMessage'].toString().isNotEmpty
                             ? user['typing'] == true
-                            ? const Text('typing....')
-                            : Text('${user['LastMessage']}')
+                                ? const Text('typing....')
+                                : Text('${user['LastMessage']}')
                             : user['typing'] == true
-                            ? const Text('typing....')
-                            : null,
+                                ? const Text('typing....')
+                                : null,
                         trailing: StreamBuilder<QuerySnapshot>(
-                          stream: _firstore.collection('messages')
+                          stream: _firstore
+                              .collection('messages')
                               .where('read', isEqualTo: false)
                               .where('from', isEqualTo: email)
                               .snapshots(),
                           builder: (context, snapshot) {
-                            if (snapshot.connectionState == ConnectionState.waiting) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
                               return const Text('Loading...');
                             }
                             if (snapshot.hasError) {
@@ -133,7 +140,6 @@ class _ChatHomeState extends State<ChatHome> with WidgetsBindingObserver{
                   }
                 },
               );
-
             },
           );
         },

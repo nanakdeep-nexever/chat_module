@@ -11,14 +11,16 @@ class SignInWithEmail extends LoginEvent {
   final String email;
   final String password;
 
-  SignInWithEmail({required this.email, required this.password});
+  const SignInWithEmail({required this.email, required this.password});
 }
 
 class SignUpWithEmail extends LoginEvent {
   final String email;
   final String password;
+  final String name;
 
-  SignUpWithEmail({required this.email, required this.password});
+  const SignUpWithEmail(
+      {required this.name, required this.email, required this.password});
 }
 
 class SignOut extends LoginEvent {}

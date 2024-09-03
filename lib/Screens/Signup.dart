@@ -44,13 +44,13 @@ class _Register_ScreenState extends State<Register_Screen> {
         child: Center(
           child: SingleChildScrollView(
             child: ConstrainedBox(
-              constraints: BoxConstraints(
+              constraints: const BoxConstraints(
                 maxWidth: 400,
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
+                  const Text(
                     'Register',
                     style: TextStyle(
                       fontSize: 32,
@@ -64,7 +64,7 @@ class _Register_ScreenState extends State<Register_Screen> {
                       children: [
                         TextFormField(
                           controller: _usernameController,
-                          decoration: InputDecoration(
+                          decoration: const InputDecoration(
                             labelText: 'Username',
                             border: OutlineInputBorder(),
                             prefixIcon: Icon(Icons.person),
@@ -80,7 +80,7 @@ class _Register_ScreenState extends State<Register_Screen> {
                         TextFormField(
                           controller: _emailController,
                           onChanged: _onEmailChanged,
-                          decoration: InputDecoration(
+                          decoration: const InputDecoration(
                             labelText: 'Email',
                             border: OutlineInputBorder(),
                             prefixIcon: Icon(Icons.email),
@@ -100,7 +100,7 @@ class _Register_ScreenState extends State<Register_Screen> {
                         TextFormField(
                           controller: _passwordController,
                           onChanged: _onPasswordChanged,
-                          decoration: InputDecoration(
+                          decoration: const InputDecoration(
                             labelText: 'Password',
                             border: OutlineInputBorder(),
                             prefixIcon: Icon(Icons.lock),
@@ -119,7 +119,7 @@ class _Register_ScreenState extends State<Register_Screen> {
                         SizedBox(height: 16),
                         TextFormField(
                           controller: _confirmPasswordController,
-                          decoration: InputDecoration(
+                          decoration: const InputDecoration(
                             labelText: 'Confirm Password',
                             border: OutlineInputBorder(),
                             prefixIcon: Icon(Icons.lock),
@@ -159,13 +159,16 @@ class _Register_ScreenState extends State<Register_Screen> {
                                 onPressed: () {
                                   final email = _emailController.text;
                                   final password = _passwordController.text;
+                                  final name = _usernameController.text;
                                   if (_formKey.currentState!.validate()) {
                                     context.read<LoginBloc>().add(
                                         SignUpWithEmail(
-                                            email: email, password: password));
+                                            email: email,
+                                            password: password,
+                                            name: name));
                                   }
                                 },
-                                child: Text('Register'),
+                                child: const Text('Register'),
                               ),
                             );
                           },
@@ -175,10 +178,10 @@ class _Register_ScreenState extends State<Register_Screen> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (_) => Login_Screen()),
+                                    builder: (_) => const Login_Screen()),
                               );
                             },
-                            child: Text("Already Registered?"))
+                            child: const Text("Already Registered?"))
                       ],
                     ),
                   ),
@@ -192,12 +195,10 @@ class _Register_ScreenState extends State<Register_Screen> {
   }
 
   void _onEmailChanged(String value) {
-    // Trigger form validation when the email field changes
     _formKey.currentState?.validate();
   }
 
   void _onPasswordChanged(String value) {
-    // Trigger form validation when the password field changes
     _formKey.currentState?.validate();
   }
 }

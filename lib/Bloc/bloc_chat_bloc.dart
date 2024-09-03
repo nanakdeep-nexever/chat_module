@@ -41,6 +41,15 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
         email: event.email,
         password: event.password,
       );
+
+      FirebaseFirestore.instance
+          .collection("users")
+          .doc(FirebaseAuth.instance.currentUser!.uid)
+          .set({
+        "email": event.email,
+        "name": event.name,
+        "img": " ",
+      });
       emit(
         AuthAuthenticated(user: userCredential.user),
       );
@@ -50,8 +59,12 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
   }
 
   FutureOr<void> _signout(SignOut event, Emitter<LoginState> emit) {
-    FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser?.uid).update({'Fcm_token':""}).then((value){_firebaseAuth.signOut();});
-
+    FirebaseFirestore.instance
+        .collection('users')
+        .doc(FirebaseAuth.instance.currentUser?.uid)
+        .update({'Fcm_token': ""}).then((value) {
+      _firebaseAuth.signOut();
+    });
 
     emit(AuthUnauthenticated());
   }

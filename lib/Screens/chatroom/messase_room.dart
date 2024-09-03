@@ -12,7 +12,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -35,9 +34,8 @@ class _MessagingPageState extends State<MessagingPage> {
   final DateFormat _timeFormatter = DateFormat('HH:mm:ss');
   Timer? _typingTimer;
 
-  updateLastM(String tosms, String from, String msg) async{
+  updateLastM(String tosms, String from, String msg) async {
     try {
-
       QuerySnapshot tosmasupdate = await FirebaseFirestore.instance
           .collection('users')
           .where('email', isEqualTo: tosms)
@@ -60,29 +58,29 @@ class _MessagingPageState extends State<MessagingPage> {
           .where('email', isEqualTo: tosms)
           .get();
 
-      if(FcmQuery.docs.isNotEmpty){
+      if (FcmQuery.docs.isNotEmpty) {
         DocumentSnapshot documentSnapshot = FcmQuery.docs.first;
         String fcmToken = documentSnapshot.get('Fcm_token') as String;
-          NotificationHandler.sendNotification(FCM_token: fcmToken, title: "New Message", body: "$msg");
+        NotificationHandler.sendNotification(
+            FCM_token: fcmToken, title: "New Message", body: "$msg");
       }
 
       print('Documents updated successfully');
     } catch (e) {
       print('Error updating documents: $e');
     }
-
   }
+
   Future<void> _sendMessage(String? from) async {
     if (_messageController.text.isNotEmpty) {
       try {
         final message = Message_Model(
-          from: from!,
-          to: widget.tosms,
-          type: MessageType.text,
-          content: _messageController.text,
-          createdAt: Timestamp.now(),
-          read: false
-        );
+            from: from!,
+            to: widget.tosms,
+            type: MessageType.text,
+            content: _messageController.text,
+            createdAt: Timestamp.now(),
+            read: false);
 
         await _firestore.collection('messages').add(message.toMap());
         await updateLastM(widget.tosms, from, _messageController.text);
@@ -94,9 +92,13 @@ class _MessagingPageState extends State<MessagingPage> {
       }
     }
   }
+
   void _setTyping(bool status) async {
     try {
-      await _firestore.collection('users').doc(_firebaseAuth.currentUser!.uid).update({'typing': status});
+      await _firestore
+          .collection('users')
+          .doc(_firebaseAuth.currentUser!.uid)
+          .update({'typing': status});
     } catch (e) {
       print('Error updating typing status: $e');
     }
@@ -106,15 +108,13 @@ class _MessagingPageState extends State<MessagingPage> {
     final toSms = widget.tosms;
 
     try {
-
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
           .collection('messages')
           .where('from', isEqualTo: toSms)
           .get();
 
-
       for (QueryDocumentSnapshot doc in querySnapshot.docs) {
-         doc.reference.update({'read': true});
+        doc.reference.update({'read': true});
       }
 
       print('Documents updated successfully');
@@ -122,15 +122,15 @@ class _MessagingPageState extends State<MessagingPage> {
       print('Error updating documents: $e');
     }
   }
-@override
+
+  @override
   void initState() {
     updateMessages();
     super.initState();
   }
 
-
   @override
-  void dispose(){
+  void dispose() {
     _typingTimer?.cancel();
     super.dispose();
   }
@@ -180,14 +180,13 @@ class _MessagingPageState extends State<MessagingPage> {
               : MessageType.document;
 
       final message = Message_Model(
-        from: from!,
-        to: widget.tosms,
-        type: messageType,
-        content: downloadUrl,
-        fileName: fileName,
-        createdAt: Timestamp.now(),
-        read: false
-      );
+          from: from!,
+          to: widget.tosms,
+          type: messageType,
+          content: downloadUrl,
+          fileName: fileName,
+          createdAt: Timestamp.now(),
+          read: false);
 
       await _firestore.collection('messages').add(message.toMap());
       _messageController.clear();
@@ -197,9 +196,14 @@ class _MessagingPageState extends State<MessagingPage> {
       );
     }
   }
+
   void setTyping(bool status) {
-    _firestore.collection('users').doc(_firebaseAuth.currentUser!.uid).update({'typing' : status});
+    _firestore
+        .collection('users')
+        .doc(_firebaseAuth.currentUser!.uid)
+        .update({'typing': status});
   }
+
   Future<MediaType?> _showMediaSelectionDialog() async {
     return showDialog<MediaType>(
       context: context,
@@ -309,40 +313,42 @@ class _MessagingPageState extends State<MessagingPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: StreamBuilder(stream: FirebaseFirestore.instance.collection("users").where('email', isEqualTo: widget.tosms).snapshots(),
-            builder: (context, snapshot){
+        title: StreamBuilder(
+            stream: FirebaseFirestore.instance
+                .collection("users")
+                .where('email', isEqualTo: widget.tosms)
+                .snapshots(),
+            builder: (context, snapshot) {
               final users = snapshot.data?.docs;
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return Center(child: CircularProgressIndicator());
+                return const Center(child: CircularProgressIndicator());
               }
               if (snapshot.hasError) {
                 return Center(child: Text('Error: ${snapshot.error}'));
               }
               if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                return Center(child: Text('No users found.'));
+                return const Center(child: Text('No users found.'));
               }
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(users![0]['name'].toString()),
-                  if(users![0]['status'])...[
-                    if(users![0]['typing'])...[
-                      Text('typing...'),
-                    ]else...[
-                      Text('online')
+                  if (users![0]['status']) ...[
+                    if (users![0]['typing']) ...[
+                      const Text('typing...'),
+                    ] else ...[
+                      const Text('online')
                     ]
                   ]
                 ],
               );
-              
             }),
-
         actions: [
           IconButton(
             onPressed: () {
               context.read<LoginBloc>().add(SignOut());
             },
-            icon: Icon(Icons.ice_skating),
+            icon: const Icon(Icons.ice_skating),
           ),
         ],
       ),
@@ -354,7 +360,7 @@ class _MessagingPageState extends State<MessagingPage> {
               MaterialPageRoute(builder: (_) => Login_Screen()),
             );
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text("Logged out")),
+              const SnackBar(content: Text("Logged out")),
             );
           }
         },
@@ -403,25 +409,50 @@ class _MessagingPageState extends State<MessagingPage> {
           Expanded(
             child: TextField(
               controller: _messageController,
-              onChanged: (string){
+              onChanged: (string) {
                 if (_typingTimer?.isActive ?? false) _typingTimer!.cancel();
-
 
                 _setTyping(true);
 
-
-                _typingTimer = Timer(Duration(seconds: 1), () {
+                _typingTimer = Timer(const Duration(seconds: 1), () {
                   _setTyping(false);
                 });
               },
-
               decoration: InputDecoration(
-                labelText: 'Enter your message...',
+                filled: true,
+                fillColor: Colors.grey[200], // Background color
+                hintText: 'Enter your message...',
+                hintStyle:
+                    TextStyle(color: Colors.grey[600]), // Hint text color
+                contentPadding:
+                    const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30.0),
+                  borderSide: BorderSide.none, // Remove the border
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30.0),
+                  borderSide: BorderSide.none, // Remove the border
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30.0),
+                  borderSide: const BorderSide(
+                    color: Colors.blue, // Border color when focused
+                    width: 2.0,
+                  ),
+                ),
+                suffixIcon: IconButton(
+                  icon: Icon(Icons.emoji_emotions_outlined,
+                      color: Colors.grey[600]),
+                  onPressed: () {
+                    // Add emoji picker functionality here
+                  },
+                ),
               ),
             ),
           ),
           IconButton(
-            icon: Icon(Icons.send),
+            icon: const Icon(Icons.send),
             onPressed: () {
               String? from = _firebaseAuth.currentUser?.email;
               _sendMessage(from);
@@ -459,9 +490,9 @@ class _MessagingPageState extends State<MessagingPage> {
                   context: context,
                   builder: (context) {
                     return AlertDialog(
-                      title: Text('Delete Message'),
-                      content:
-                          Text('Are you sure you want to delete this message?'),
+                      title: const Text('Delete Message'),
+                      content: const Text(
+                          'Are you sure you want to delete this message?'),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.of(context).pop(),
@@ -495,7 +526,7 @@ class _MessagingPageState extends State<MessagingPage> {
                       if (message.type == MessageType.text)
                         Container(
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: Colors.green.shade100,
                             border: Border.all(
                               color:
                                   Colors.white24, // Set the border color here
@@ -506,9 +537,9 @@ class _MessagingPageState extends State<MessagingPage> {
                           ),
                           child: ClipRRect(
                             borderRadius: isSentByCurrentUser
-                                ? BorderRadius.only(
+                                ? const BorderRadius.only(
                                     topLeft: Radius.circular(20))
-                                : BorderRadius.only(
+                                : const BorderRadius.only(
                                     topRight: Radius.circular(20)),
                             child: Padding(
                               padding: EdgeInsets.all(14),
@@ -518,7 +549,7 @@ class _MessagingPageState extends State<MessagingPage> {
                                   textAlign: isSentByCurrentUser
                                       ? TextAlign.end
                                       : TextAlign.start,
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                       color: Colors.black,
                                       wordSpacing: 2,
                                       letterSpacing: .5),
@@ -580,10 +611,6 @@ class _MessagingPageState extends State<MessagingPage> {
     );
   }
 }
-
-
-
-
 
 class VideoPlayerWidget extends StatefulWidget {
   final String url;
