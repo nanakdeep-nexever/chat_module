@@ -31,7 +31,7 @@ class _MessagingPageState extends State<MessagingPage> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   final TextEditingController _messageController = TextEditingController();
-  final DateFormat _timeFormatter = DateFormat('HH:mm:ss');
+  final DateFormat _timeFormatter = DateFormat('HH:mm');
   Timer? _typingTimer;
 
   updateLastM(String tosms, String from, String msg) async {
@@ -238,11 +238,11 @@ class _MessagingPageState extends State<MessagingPage> {
       builder: (BuildContext context) {
         // Only show the camera option if mediaType is Image
         return AlertDialog(
-          title: Text('Select Image Source'),
+          title: const Text('Select Image Source'),
           actions: <Widget>[
             if (mediaType == MediaType.image) ...[
               TextButton(
-                child: Text('Camera'),
+                child: const Text('Camera'),
                 onPressed: () => Navigator.of(context).pop(ImageSource.camera),
               ),
             ],
@@ -299,7 +299,7 @@ class _MessagingPageState extends State<MessagingPage> {
           ),
           actions: <Widget>[
             TextButton(
-              child: Text('Close'),
+              child: const Text('Close'),
               onPressed: () => Navigator.of(context).pop(),
             ),
           ],
@@ -390,10 +390,8 @@ class _MessagingPageState extends State<MessagingPage> {
             }),
         actions: [
           IconButton(
-            onPressed: () {
-              context.read<LoginBloc>().add(SignOut());
-            },
-            icon: const Icon(Icons.ice_skating),
+            onPressed: () {},
+            icon: const Icon(Icons.more_vert),
           ),
         ],
       ),
@@ -444,55 +442,68 @@ class _MessagingPageState extends State<MessagingPage> {
       padding: const EdgeInsets.all(8.0),
       child: Row(
         children: <Widget>[
-          IconButton(
-            icon: const Icon(Icons.file_open),
-            onPressed: () {
-              String? from = _firebaseAuth.currentUser?.email;
-              uploadMediaAndSaveReference(from);
-            },
-          ),
           Expanded(
-            child: TextField(
-              controller: _messageController,
-              onChanged: (string) {
-                if (_typingTimer?.isActive ?? false) _typingTimer!.cancel();
+              child: TextField(
+            controller: _messageController,
+            onChanged: (string) {
+              if (_typingTimer?.isActive ?? false) _typingTimer!.cancel();
 
-                _setTyping(true);
+              _setTyping(true);
 
-                _typingTimer = Timer(const Duration(seconds: 1), () {
-                  _setTyping(false);
-                });
-              },
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: Colors.grey[200],
-                hintText: 'Enter your message...',
-                hintStyle: TextStyle(color: Colors.grey[600]),
-                contentPadding:
-                    const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30.0),
-                  borderSide: BorderSide.none,
+              _typingTimer = Timer(const Duration(seconds: 1), () {
+                _setTyping(false);
+              });
+            },
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: Colors.grey[200],
+              hintText: 'Enter your message...',
+              hintStyle: TextStyle(color: Colors.grey[600]),
+              contentPadding:
+                  const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(30.0),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(30.0),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(30.0),
+                borderSide: const BorderSide(
+                  color: Colors.blue,
+                  width: 2.0,
                 ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30.0),
-                  borderSide: BorderSide.none,
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30.0),
-                  borderSide: const BorderSide(
-                    color: Colors.blue,
-                    width: 2.0,
-                  ),
-                ),
-                suffixIcon: IconButton(
-                  icon: Icon(Icons.emoji_emotions_outlined,
-                      color: Colors.grey[600]),
-                  onPressed: () {},
+              ),
+              prefixIcon: IconButton(
+                icon: Icon(Icons.emoji_emotions_outlined,
+                    color: Colors.grey[600]),
+                onPressed: () {
+                  // Handle emoji icon press
+                },
+              ),
+              suffixIcon: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.attach_file, color: Colors.grey[600]),
+                      onPressed: () {
+                        String? from = _firebaseAuth.currentUser?.email;
+                        uploadMediaAndSaveReference(from);
+                      },
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.camera_alt, color: Colors.grey[600]),
+                      onPressed: () {},
+                    ),
+                  ],
                 ),
               ),
             ),
-          ),
+          )),
           IconButton(
             icon: const Icon(Icons.send),
             onPressed: () {
@@ -538,7 +549,7 @@ class _MessagingPageState extends State<MessagingPage> {
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.of(context).pop(),
-                          child: Text('Cancel'),
+                          child: const Text('Cancel'),
                         ),
                         TextButton(
                           onPressed: () {
@@ -656,7 +667,7 @@ class _MessagingPageState extends State<MessagingPage> {
 class VideoPlayerWidget extends StatefulWidget {
   final String url;
 
-  const VideoPlayerWidget({required this.url});
+  const VideoPlayerWidget({super.key, required this.url});
 
   @override
   _VideoPlayerWidgetState createState() => _VideoPlayerWidgetState();
