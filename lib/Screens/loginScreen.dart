@@ -41,7 +41,7 @@ class _Login_ScreenState extends State<Login_Screen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
+                  const Text(
                     'Login',
                     style: TextStyle(
                       fontSize: 32,
@@ -55,7 +55,7 @@ class _Login_ScreenState extends State<Login_Screen> {
                       children: [
                         TextFormField(
                           controller: _emailController,
-                          decoration: InputDecoration(
+                          decoration: const InputDecoration(
                             labelText: 'Email',
                             border: OutlineInputBorder(),
                             prefixIcon: Icon(Icons.email),
@@ -75,7 +75,7 @@ class _Login_ScreenState extends State<Login_Screen> {
                         SizedBox(height: 16),
                         TextFormField(
                           controller: _passwordController,
-                          decoration: InputDecoration(
+                          decoration: const InputDecoration(
                             labelText: 'Password',
                             border: OutlineInputBorder(),
                             prefixIcon: Icon(Icons.lock),
@@ -92,11 +92,11 @@ class _Login_ScreenState extends State<Login_Screen> {
                             return null;
                           },
                         ),
-                        SizedBox(height: 24),
+                        const SizedBox(height: 24),
                         BlocConsumer<LoginBloc, LoginState>(
                           listener: (context, state) {
                             if (state is AuthLoading) {
-                              CircularProgressIndicator();
+                              const CircularProgressIndicator();
                             } else if (state is AuthError) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(

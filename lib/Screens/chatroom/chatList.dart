@@ -14,19 +14,19 @@ class ChatHome extends StatefulWidget {
   State<ChatHome> createState() => _ChatHomeState();
 }
 
-class _ChatHomeState extends State<ChatHome> with WidgetsBindingObserver{
+class _ChatHomeState extends State<ChatHome> with WidgetsBindingObserver {
   FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
-  FirebaseFirestore _firstore =FirebaseFirestore.instance;
+  FirebaseFirestore _firstore = FirebaseFirestore.instance;
 
   @override
   void initState() {
-
+    // TODO: implement initState
     WidgetsBinding.instance.addObserver(this);
     super.initState();
   }
 
-  void setStatus(bool status)  {
-     FirebaseFirestore.instance
+  void setStatus(bool status) {
+    FirebaseFirestore.instance
         .collection("users")
         .doc(FirebaseAuth.instance.currentUser!.uid)
         .update({"status": status});
@@ -43,7 +43,7 @@ class _ChatHomeState extends State<ChatHome> with WidgetsBindingObserver{
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.resumed) {
       setStatus(true);
-    } else{
+    } else {
       setStatus(false);
     }
   }
@@ -51,15 +51,15 @@ class _ChatHomeState extends State<ChatHome> with WidgetsBindingObserver{
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-
-      appBar: AppBar(automaticallyImplyLeading: false,
-        title: Text('Chat Home'),
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        title: const Text('Chat Home'),
         actions: [
           IconButton(
             onPressed: () {
               context.read<LoginBloc>().add(SignOut());
             },
-            icon: Icon(Icons.logout),
+            icon: const Icon(Icons.logout),
           ),
         ],
       ),
@@ -74,11 +74,16 @@ class _ChatHomeState extends State<ChatHome> with WidgetsBindingObserver{
         },
         builder: (context, state) {
           return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-            stream: _firstore.collection('users').where("email", isNotEqualTo: _firebaseAuth.currentUser?.email).snapshots(),
+            stream: _firstore
+                .collection('users')
+                .where("email",
+                    isNotEqualTo: FirebaseAuth.instance.currentUser!.email)
+                .snapshots(),
             builder: (context, snapshot) {
-
-              if (!snapshot.hasData || snapshot.data == null || snapshot.data!.docs.isEmpty) {
-                return Center(child: Text('No users found.'));
+              if (!snapshot.hasData ||
+                  snapshot.data == null ||
+                  snapshot.data!.docs.isEmpty) {
+                return const Center(child: Text('No users found.'));
               }
 
               final users = snapshot.data!.docs;
@@ -89,48 +94,69 @@ class _ChatHomeState extends State<ChatHome> with WidgetsBindingObserver{
                   final user = users[index].data();
                   final name = user['name'] as String?;
                   final email = user['email'] as String?;
+                  final img = user['img'] as String?;
 
-
-                    return GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => MessagingPage(email ?? ''),
-                          ),
-                        );
-                      },
-                      child: ListTile(
-                        title: Text(name ?? ''),
-                        subtitle: user['LastMessage'].toString().isNotEmpty
-                            ? user['typing'] == true
-                            ? const Text('typing....')
-                            : Text('${user['LastMessage']}')
-                            : user['typing'] == true
-                            ? const Text('typing....')
-                            : null,
-                        trailing: StreamBuilder<QuerySnapshot>(
-                          stream: _firstore.collection('messages')
-                              .where('read', isEqualTo: false)
-                              .where('from', isEqualTo: email)
-                              .snapshots(),
-                          builder: (context, snapshot) {
-                            if (snapshot.connectionState == ConnectionState.waiting) {
-                              return const Text('Loading...');
-                            }
-                            if (snapshot.hasError) {
-                              return const Text('Error');
-                            }
-                            final reads = snapshot.data?.docs ?? [];
-                            return Text(reads.isEmpty ? '' : '${reads.length}');
-                          },
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => MessagingPage(email ?? ''),
                         ),
+                      );
+                    },
+                    child: ListTile(
+                      leading: CircleAvatar(
+                          radius: 25, // Adjust the radius as needed
+                          backgroundImage: img != null && img.isNotEmpty
+                              ? NetworkImage(img)
+                              : null),
+                      title: Text(
+                        name ?? '',
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w500, fontSize: 20),
                       ),
-                    );
-
+                      subtitle: user['LastMessage'].toString().isNotEmpty
+                          ? user['typing'] == true
+                              ? const Text('typing....')
+                              : Text('${user['LastMessage']}')
+                          : user['typing'] == true
+                              ? const Text('typing....')
+                              : null,
+                      trailing: StreamBuilder<QuerySnapshot>(
+                        stream: _firstore
+                            .collection('messages')
+                            .where('read', isEqualTo: false)
+                            .where('from', isEqualTo: email)
+                            .snapshots(),
+                        builder: (context, snapshot) {
+                          if (snapshot.hasError) {
+                            return const Text('Error');
+                          }
+                          final reads = snapshot.data?.docs ?? [];
+                          return reads.isEmpty
+                              ? const SizedBox.shrink()
+                              : Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.green,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Text(
+                                    '${reads.length}',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                );
+                        },
+                      ),
+                    ),
+                  );
                 },
               );
-
             },
           );
         },
