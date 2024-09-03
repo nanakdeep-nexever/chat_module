@@ -8,3 +8,4 @@ enum MessageType {
 }
 
 enum MediaType { image, video, document }
+

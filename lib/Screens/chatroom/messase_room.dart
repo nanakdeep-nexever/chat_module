@@ -35,7 +35,10 @@ class _MessagingPageState extends State<MessagingPage> {
   final DateFormat _timeFormatter = DateFormat('HH:mm:ss');
   Timer? _typingTimer;
 
+
+
   updateLastM(String tosms, String from, String msg) async{
+    String onScreenStatus='';
     try {
 
       QuerySnapshot tosmasupdate = await FirebaseFirestore.instance
@@ -55,16 +58,28 @@ class _MessagingPageState extends State<MessagingPage> {
         doc.reference.update({'LastMessage': msg});
       }
 
-      QuerySnapshot FcmQuery = await FirebaseFirestore.instance
-          .collection('users')
-          .where('email', isEqualTo: tosms)
-          .get();
+      final userDoc = _firestore.collection('users').where('email', isEqualTo: widget.tosms);
+      final snapshot = await userDoc.get();
+    if(snapshot.docs.isNotEmpty){
+      final doc = snapshot.docs.first;
+      onScreenStatus = doc.get('on_screen');
+    }
+      print("current user opencheck ${FirebaseAuth.instance.currentUser?.email}  and Reciver ${onScreenStatus}");
+      if(onScreenStatus.toString() != FirebaseAuth.instance.currentUser?.email.toString()){
 
-      if(FcmQuery.docs.isNotEmpty){
-        DocumentSnapshot documentSnapshot = FcmQuery.docs.first;
-        String fcmToken = documentSnapshot.get('Fcm_token') as String;
+        QuerySnapshot FcmQuery = await FirebaseFirestore.instance
+            .collection('users')
+            .where('email', isEqualTo: tosms)
+            .get();
+
+
+        if(FcmQuery.docs.isNotEmpty){
+          DocumentSnapshot documentSnapshot = FcmQuery.docs.first;
+          String fcmToken = documentSnapshot.get('Fcm_token') as String;
           NotificationHandler.sendNotification(FCM_token: fcmToken, title: "New Message", body: "$msg");
+        }
       }
+
 
       print('Documents updated successfully');
     } catch (e) {
@@ -123,9 +138,25 @@ class _MessagingPageState extends State<MessagingPage> {
       print('Error updating documents: $e');
     }
   }
+  Future<void> _updateOnScreenStatus(String status) async {
+
+    try {
+      final userDoc = _firestore.collection('users').where('email', isEqualTo: _firebaseAuth.currentUser!.email);
+      final snapshot = await userDoc.get();
+
+      for (var doc in snapshot.docs) {
+        await doc.reference.update({'on_screen': status});
+      }
+
+    } catch (e) {
+      print('Error updating on_screen status: $e');
+    }
+  }
+
 @override
   void initState() {
     updateMessages();
+    _updateOnScreenStatus(widget.tosms);
     super.initState();
   }
 
@@ -133,6 +164,7 @@ class _MessagingPageState extends State<MessagingPage> {
   @override
   void dispose(){
     _typingTimer?.cancel();
+    _updateOnScreenStatus("");
     super.dispose();
   }
 
@@ -580,6 +612,8 @@ class _MessagingPageState extends State<MessagingPage> {
       },
     );
   }
+
+
 }
 
 
