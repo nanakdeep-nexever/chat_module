@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:chat_module/Bloc/bloc_chat_bloc.dart';
 import 'package:chat_module/Bloc/bloc_chat_state.dart';
 import 'package:chat_module/Screens/chatroom/messase_room.dart';
@@ -23,6 +25,17 @@ class _ChatHomeState extends State<ChatHome> with WidgetsBindingObserver {
     // TODO: implement initState
     WidgetsBinding.instance.addObserver(this);
     super.initState();
+  }
+  Future<bool> _isUserOnScreen(String email) async {
+    final userDoc = _firstore
+        .collection('users')
+        .where('email', isEqualTo: email);
+    final snapshot = await userDoc.get();
+    if (snapshot.docs.isNotEmpty) {
+      final doc = snapshot.docs.first;
+      return doc.get('on_screen') == _firebaseAuth.currentUser?.email;
+    }
+    return false;
   }
 
   void setStatus(bool status) {
@@ -116,13 +129,19 @@ class _ChatHomeState extends State<ChatHome> with WidgetsBindingObserver {
                         style: const TextStyle(
                             fontWeight: FontWeight.w500, fontSize: 20),
                       ),
-                      subtitle: user['LastMessage'].toString().isNotEmpty
-                          ? user['typing'] == true
+                      subtitle: FutureBuilder<bool>(
+                        future: _isUserOnScreen(email!),
+                        builder: (context, snapshot){
+                          final isonscreen =snapshot.data ?? false;
+                          final typing = user['typing'] ?? false;
+                          print("typing  $typing    and isonscreen $typing");
+                          return typing && isonscreen
                               ? const Text('typing....')
-                              : Text('${user['LastMessage']}')
-                          : user['typing'] == true
-                              ? const Text('typing....')
-                              : null,
+                              : (user['LastMessage'].toString().isNotEmpty
+                              ? Text('${user['LastMessage']}')
+                              : const SizedBox.shrink());
+                        },
+                      ),
                       trailing: StreamBuilder<QuerySnapshot>(
                         stream: _firstore
                             .collection('messages')
