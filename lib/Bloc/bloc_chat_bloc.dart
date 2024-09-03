@@ -29,7 +29,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
         FirebaseFirestore.instance
             .collection('users')
             .doc(FirebaseAuth.instance.currentUser?.uid)
-            .update({'Fcm_token': NotificationHandler.token,'status':true});
+            .update({'Fcm_token': NotificationHandler.token,'status':true,});
       }
       emit(AuthAuthenticated(user: userCredential.user));
     } catch (e) {
@@ -62,13 +62,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
     FirebaseFirestore.instance
         .collection('users')
         .doc(FirebaseAuth.instance.currentUser?.uid)
-        .update({'Fcm_token': ""}).then((value) {
-      FirebaseFirestore.instance
-          .collection('users')
-          .doc(FirebaseAuth.instance.currentUser?.uid)
-          .update({'status': false}).then((value) {
-        _firebaseAuth.signOut();
-      });
+        .update({'Fcm_token': "",'on_screen':"",'status': false}).then((value) {_firebaseAuth.signOut();
     });
 
     emit(AuthUnauthenticated());

@@ -37,8 +37,9 @@ class _MessagingPageState extends State<MessagingPage> {
 
 
 
-  updateLastM(String tosms, String from, String msg) async{
+  updateLastM(String tosms, String from, String? msg, String? imgurl) async{
     String onScreenStatus='';
+
     try {
 
       QuerySnapshot tosmasupdate = await FirebaseFirestore.instance
@@ -51,11 +52,11 @@ class _MessagingPageState extends State<MessagingPage> {
           .get();
 
       for (QueryDocumentSnapshot doc in fromsmsupdate.docs) {
-        doc.reference.update({'LastMessage': msg});
+        doc.reference.update({'LastMessage': msg ?? ''});
       }
 
       for (QueryDocumentSnapshot doc in tosmasupdate.docs) {
-        doc.reference.update({'LastMessage': msg});
+        doc.reference.update({'LastMessage': msg ?? ''});
       }
 
       final userDoc = _firestore.collection('users').where('email', isEqualTo: widget.tosms);
@@ -76,7 +77,7 @@ class _MessagingPageState extends State<MessagingPage> {
         if(FcmQuery.docs.isNotEmpty){
           DocumentSnapshot documentSnapshot = FcmQuery.docs.first;
           String fcmToken = documentSnapshot.get('Fcm_token') as String;
-          NotificationHandler.sendNotification(FCM_token: fcmToken, title: "New Message", body: "$msg");
+          NotificationHandler.sendNotification(FCM_token: fcmToken, title: "New Message", body: "$msg",data: {'imageUrl' : imgurl ?? ''});
         }
       }
 
@@ -100,7 +101,7 @@ class _MessagingPageState extends State<MessagingPage> {
         );
 
         await _firestore.collection('messages').add(message.toMap());
-        await updateLastM(widget.tosms, from, _messageController.text);
+        await updateLastM(widget.tosms, from, _messageController.text, '');
         _messageController.clear();
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -223,6 +224,7 @@ class _MessagingPageState extends State<MessagingPage> {
       );
 
       await _firestore.collection('messages').add(message.toMap());
+      updateLastM(widget.tosms, from.toString(), 'image', downloadUrl);
       _messageController.clear();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
