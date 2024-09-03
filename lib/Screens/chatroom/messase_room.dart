@@ -34,9 +34,7 @@ class _MessagingPageState extends State<MessagingPage> {
   final DateFormat _timeFormatter = DateFormat('HH:mm');
   Timer? _typingTimer;
 
-  updateLastM(String tosms, String from, String? msg, String? imgurl) async {
-    String onScreenStatus = '';
-
+  updateLastM(String tosms, String from, String msg) async {
     try {
       QuerySnapshot tosmasupdate = await FirebaseFirestore.instance
           .collection('users')
@@ -48,39 +46,23 @@ class _MessagingPageState extends State<MessagingPage> {
           .get();
 
       for (QueryDocumentSnapshot doc in fromsmsupdate.docs) {
-        doc.reference.update({'LastMessage': msg ?? ''});
+        doc.reference.update({'LastMessage': msg});
       }
 
       for (QueryDocumentSnapshot doc in tosmasupdate.docs) {
-        doc.reference.update({'LastMessage': msg ?? ''});
+        doc.reference.update({'LastMessage': msg});
       }
 
-      final userDoc = _firestore
+      QuerySnapshot FcmQuery = await FirebaseFirestore.instance
           .collection('users')
-          .where('email', isEqualTo: widget.tosms);
-      final snapshot = await userDoc.get();
-      if (snapshot.docs.isNotEmpty) {
-        final doc = snapshot.docs.first;
-        onScreenStatus = doc.get('on_screen');
-      }
-      print(
-          "current user opencheck ${FirebaseAuth.instance.currentUser?.email}  and Reciver ${onScreenStatus}");
-      if (onScreenStatus.toString() !=
-          FirebaseAuth.instance.currentUser?.email.toString()) {
-        QuerySnapshot FcmQuery = await FirebaseFirestore.instance
-            .collection('users')
-            .where('email', isEqualTo: tosms)
-            .get();
+          .where('email', isEqualTo: tosms)
+          .get();
 
-        if (FcmQuery.docs.isNotEmpty) {
-          DocumentSnapshot documentSnapshot = FcmQuery.docs.first;
-          String fcmToken = documentSnapshot.get('Fcm_token') as String;
-          NotificationHandler.sendNotification(
-              FCM_token: fcmToken,
-              title: "New Message",
-              body: "$msg",
-              data: {'imageUrl': imgurl ?? ''});
-        }
+      if (FcmQuery.docs.isNotEmpty) {
+        DocumentSnapshot documentSnapshot = FcmQuery.docs.first;
+        String fcmToken = documentSnapshot.get('Fcm_token') as String;
+        NotificationHandler.sendNotification(
+            FCM_token: fcmToken, title: "New Message", body: msg);
       }
 
       print('Documents updated successfully');
@@ -101,7 +83,7 @@ class _MessagingPageState extends State<MessagingPage> {
             read: false);
 
         await _firestore.collection('messages').add(message.toMap());
-        await updateLastM(widget.tosms, from, _messageController.text, '');
+        await updateLastM(widget.tosms, from, _messageController.text);
         _messageController.clear();
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -141,21 +123,6 @@ class _MessagingPageState extends State<MessagingPage> {
     }
   }
 
-  Future<void> _updateOnScreenStatus(String status) async {
-    try {
-      final userDoc = _firestore
-          .collection('users')
-          .where('email', isEqualTo: _firebaseAuth.currentUser!.email);
-      final snapshot = await userDoc.get();
-
-      for (var doc in snapshot.docs) {
-        await doc.reference.update({'on_screen': status});
-      }
-    } catch (e) {
-      print('Error updating on_screen status: $e');
-    }
-  }
-
   @override
   void initState() {
     updateMessages();
@@ -179,7 +146,7 @@ class _MessagingPageState extends State<MessagingPage> {
     final status = await Permission.camera.request();
     if (mediaType == MediaType.image && !status.isGranted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Camera permission denied")),
+        const SnackBar(content: Text("Camera permission denied")),
       );
       return;
     }
@@ -191,8 +158,7 @@ class _MessagingPageState extends State<MessagingPage> {
           ? await picker.pickImage(source: source)
           : mediaType == MediaType.video
               ? await picker.pickVideo(source: source)
-              : await picker.pickVideo(
-                  source: source); // Handle document uploads if applicable
+              : await picker.pickVideo(source: source);
 
       if (pickedFile == null) {
         return;
@@ -242,22 +208,22 @@ class _MessagingPageState extends State<MessagingPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Select Media Type'),
+          title: const Text('Select Media Type'),
           actions: <Widget>[
             TextButton(
-              child: Text('Image'),
+              child: const Text('Image'),
               onPressed: () => Navigator.of(context).pop(MediaType.image),
             ),
             TextButton(
-              child: Text('Video'),
+              child: const Text('Video'),
               onPressed: () => Navigator.of(context).pop(MediaType.video),
             ),
             TextButton(
-              child: Text('Document'),
+              child: const Text('Document'),
               onPressed: () => Navigator.of(context).pop(MediaType.document),
             ),
             TextButton(
-              child: Text('Cancel'),
+              child: const Text('Cancel'),
               onPressed: () => Navigator.of(context).pop(),
             ),
           ],
@@ -272,11 +238,11 @@ class _MessagingPageState extends State<MessagingPage> {
       builder: (BuildContext context) {
         // Only show the camera option if mediaType is Image
         return AlertDialog(
-          title: Text('Select Image Source'),
+          title: const Text('Select Image Source'),
           actions: <Widget>[
             if (mediaType == MediaType.image) ...[
               TextButton(
-                child: Text('Camera'),
+                child: const Text('Camera'),
                 onPressed: () => Navigator.of(context).pop(ImageSource.camera),
               ),
             ],
@@ -333,7 +299,7 @@ class _MessagingPageState extends State<MessagingPage> {
           ),
           actions: <Widget>[
             TextButton(
-              child: Text('Close'),
+              child: const Text('Close'),
               onPressed: () => Navigator.of(context).pop(),
             ),
           ],
@@ -353,35 +319,79 @@ class _MessagingPageState extends State<MessagingPage> {
                 .snapshots(),
             builder: (context, snapshot) {
               final users = snapshot.data?.docs;
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return Center(child: CircularProgressIndicator());
-              }
+
               if (snapshot.hasError) {
                 return Center(child: Text('Error: ${snapshot.error}'));
               }
               if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                return Center(child: Text('No users found.'));
+                return const Center(child: Text('No users found.'));
               }
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              return Row(
                 children: [
-                  Text(users![0]['name'].toString()),
-                  if (users![0]['status']) ...[
-                    if (users![0]['typing']) ...[
-                      Text('typing...'),
-                    ] else ...[
-                      Text('online')
-                    ]
-                  ]
+                  Stack(
+                    children: [
+                      CircleAvatar(
+                        radius: 25,
+                        backgroundImage: users![0]['img'] != null &&
+                                users![0]['img'].isNotEmpty
+                            ? NetworkImage(users![0]['img'])
+                            : const AssetImage('assets/placeholder.png')
+                                as ImageProvider,
+                      ),
+                      if (users![0]['status'])
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: Container(
+                            width: 12,
+                            height: 12,
+                            decoration: BoxDecoration(
+                              color: Colors.green,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Colors.white,
+                                width: 2,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(width: 10),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(users![0]['name'].toString()),
+                      if (users![0]['status']) ...[
+                        if (users![0]['typing']) ...[
+                          const Text(
+                            'typing...',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w400,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ] else ...[
+                          const Text(
+                            'online',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w400,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ],
+                  ),
                 ],
               );
             }),
         actions: [
           IconButton(
-            onPressed: () {
-              context.read<LoginBloc>().add(SignOut());
-            },
-            icon: Icon(Icons.ice_skating),
+            onPressed: () {},
+            icon: const Icon(Icons.more_vert),
           ),
         ],
       ),
@@ -390,10 +400,10 @@ class _MessagingPageState extends State<MessagingPage> {
           if (state is AuthUnauthenticated) {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => Login_Screen()),
+              MaterialPageRoute(builder: (_) => const Login_Screen()),
             );
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text("Logged out")),
+              const SnackBar(content: Text("Logged out")),
             );
           }
         },
@@ -408,7 +418,7 @@ class _MessagingPageState extends State<MessagingPage> {
                       .snapshots(),
                   builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
-                      return Center(child: CircularProgressIndicator());
+                      return const Center(child: CircularProgressIndicator());
                     }
                     if (snapshot.hasError) {
                       return Center(child: Text('Error: ${snapshot.error}'));
@@ -432,32 +442,70 @@ class _MessagingPageState extends State<MessagingPage> {
       padding: const EdgeInsets.all(8.0),
       child: Row(
         children: <Widget>[
-          IconButton(
-            icon: Icon(Icons.file_open),
-            onPressed: () {
-              String? from = _firebaseAuth.currentUser?.email;
-              uploadMediaAndSaveReference(from);
-            },
-          ),
           Expanded(
-            child: TextField(
-              controller: _messageController,
-              onChanged: (string) {
-                if (_typingTimer?.isActive ?? false) _typingTimer!.cancel();
+              child: TextField(
+            controller: _messageController,
+            onChanged: (string) {
+              if (_typingTimer?.isActive ?? false) _typingTimer!.cancel();
 
-                _setTyping(true);
+              _setTyping(true);
 
-                _typingTimer = Timer(Duration(seconds: 1), () {
-                  _setTyping(false);
-                });
-              },
-              decoration: const InputDecoration(
-                labelText: 'Enter your message...',
+              _typingTimer = Timer(const Duration(seconds: 1), () {
+                _setTyping(false);
+              });
+            },
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: Colors.grey[200],
+              hintText: 'Enter your message...',
+              hintStyle: TextStyle(color: Colors.grey[600]),
+              contentPadding:
+                  const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(30.0),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(30.0),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(30.0),
+                borderSide: const BorderSide(
+                  color: Colors.blue,
+                  width: 2.0,
+                ),
+              ),
+              prefixIcon: IconButton(
+                icon: Icon(Icons.emoji_emotions_outlined,
+                    color: Colors.grey[600]),
+                onPressed: () {
+                  // Handle emoji icon press
+                },
+              ),
+              suffixIcon: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.attach_file, color: Colors.grey[600]),
+                      onPressed: () {
+                        String? from = _firebaseAuth.currentUser?.email;
+                        uploadMediaAndSaveReference(from);
+                      },
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.camera_alt, color: Colors.grey[600]),
+                      onPressed: () {},
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
+          )),
           IconButton(
-            icon: Icon(Icons.send),
+            icon: const Icon(Icons.send),
             onPressed: () {
               String? from = _firebaseAuth.currentUser?.email;
               _sendMessage(from);
@@ -495,20 +543,20 @@ class _MessagingPageState extends State<MessagingPage> {
                   context: context,
                   builder: (context) {
                     return AlertDialog(
-                      title: Text('Delete Message'),
-                      content:
-                          Text('Are you sure you want to delete this message?'),
+                      title: const Text('Delete Message'),
+                      content: const Text(
+                          'Are you sure you want to delete this message?'),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.of(context).pop(),
-                          child: Text('Cancel'),
+                          child: const Text('Cancel'),
                         ),
                         TextButton(
                           onPressed: () {
                             Navigator.of(context).pop();
                             _deleteMessage(messageId);
                           },
-                          child: Text('Delete'),
+                          child: const Text('Delete'),
                         ),
                       ],
                     );
@@ -531,35 +579,34 @@ class _MessagingPageState extends State<MessagingPage> {
                       if (message.type == MessageType.text)
                         Container(
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: isSentByCurrentUser
+                                ? Colors.blue.shade200
+                                : Colors.grey.shade200,
                             border: Border.all(
-                              color:
-                                  Colors.white24, // Set the border color here
-                              width: 1.0, // Set the border width here
-                            ),
-                            borderRadius:
-                                BorderRadius.only(topLeft: Radius.circular(22)),
+                              color: Colors.white24,
+                              width: 1.0,
+                            ), // Handle emoji icon press
+                            borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(22)),
                           ),
                           child: ClipRRect(
                             borderRadius: isSentByCurrentUser
-                                ? BorderRadius.only(
+                                ? const BorderRadius.only(
                                     topLeft: Radius.circular(20))
-                                : BorderRadius.only(
+                                : const BorderRadius.only(
                                     topRight: Radius.circular(20)),
                             child: Padding(
-                              padding: EdgeInsets.all(14),
-                              child: Container(
-                                child: Text(
-                                  message.content,
-                                  textAlign: isSentByCurrentUser
-                                      ? TextAlign.end
-                                      : TextAlign.start,
-                                  style: TextStyle(
-                                      color: Colors.black,
-                                      wordSpacing: 2,
-                                      letterSpacing: .5),
-                                  overflow: TextOverflow.values.last,
-                                ),
+                              padding: const EdgeInsets.all(14),
+                              child: Text(
+                                message.content,
+                                textAlign: isSentByCurrentUser
+                                    ? TextAlign.end
+                                    : TextAlign.start,
+                                style: const TextStyle(
+                                    color: Colors.black,
+                                    wordSpacing: 2,
+                                    letterSpacing: .5),
+                                overflow: TextOverflow.values.last,
                               ),
                             ),
                           ),
@@ -570,7 +617,7 @@ class _MessagingPageState extends State<MessagingPage> {
                           height: 75,
                           width: 65,
                           errorBuilder: (context, error, stackTrace) =>
-                              Icon(Icons.error),
+                              const Icon(Icons.error),
                         ),
                       if (message.type == MessageType.video)
                         SizedBox(
@@ -579,7 +626,7 @@ class _MessagingPageState extends State<MessagingPage> {
                           child: VideoPlayerWidget(url: message.content),
                         ),
                       if (message.type == MessageType.document)
-                        Icon(Icons.description, size: 40),
+                        const Icon(Icons.description, size: 40),
                       Text(
                         _timeFormatter.format(message.createdAt.toDate()),
                       ),
@@ -590,7 +637,7 @@ class _MessagingPageState extends State<MessagingPage> {
             ),
           );
         }
-        return SizedBox.shrink();
+        return const SizedBox.shrink();
       },
     );
   }
@@ -600,14 +647,14 @@ class _MessagingPageState extends State<MessagingPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          content: Container(
+          content: SizedBox(
             width: double.infinity,
             height: 300,
             child: VideoPlayerWidget(url: content),
           ),
           actions: <Widget>[
             TextButton(
-              child: Text('Close'),
+              child: const Text('Close'),
               onPressed: () => Navigator.of(context).pop(),
             ),
           ],
