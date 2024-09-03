@@ -37,7 +37,7 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   const AndroidInitializationSettings initializationSettingsAndroid =
-  AndroidInitializationSettings('@mipmap/ic_launcher');
+  AndroidInitializationSettings('@mipmap/ic_test');
 
   final InitializationSettings initializationSettings = InitializationSettings(
     android: initializationSettingsAndroid,
