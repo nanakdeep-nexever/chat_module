@@ -88,6 +88,9 @@ class _MessagingPageState extends State<MessagingPage> {
     }
 
   }
+
+
+
   Future<void> _sendMessage(String? from) async {
     if (_messageController.text.isNotEmpty) {
       try {
@@ -110,6 +113,8 @@ class _MessagingPageState extends State<MessagingPage> {
       }
     }
   }
+
+
   void _setTyping(bool status) async {
     try {
       await _firestore.collection('users').doc(_firebaseAuth.currentUser!.uid).update({'typing': status});
@@ -122,14 +127,10 @@ class _MessagingPageState extends State<MessagingPage> {
     final toSms = widget.tosms;
 
     try {
-
-
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
           .collection('messages')
           .where('from', isEqualTo: toSms)
           .get();
-
-
       for (QueryDocumentSnapshot doc in querySnapshot.docs) {
          doc.reference.update({'read': true});
       }
@@ -139,6 +140,10 @@ class _MessagingPageState extends State<MessagingPage> {
       print('Error updating documents: $e');
     }
   }
+
+
+
+
   Future<void> _updateOnScreenStatus(String status) async {
 
     try {
