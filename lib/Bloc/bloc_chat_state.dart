@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:equatable/equatable.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -29,4 +31,22 @@ class AuthError extends LoginState {
 
   @override
   List<Object> get props => [message];
+}
+
+class ImagePicked extends LoginState {
+  final File image;
+
+  const ImagePicked(this.image);
+
+  @override
+  List<Object> get props => [image];
+}
+
+class ImageUploaded extends LoginState {
+  final String imageUrl;
+
+  const ImageUploaded(this.imageUrl);
+
+  @override
+  List<Object> get props => [imageUrl];
 }

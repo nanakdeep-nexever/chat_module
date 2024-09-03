@@ -24,3 +24,18 @@ class SignUpWithEmail extends LoginEvent {
 }
 
 class SignOut extends LoginEvent {}
+
+class PickImage extends LoginEvent {}
+
+class UploadImage extends LoginEvent {
+  final String imagePath;
+
+  const UploadImage({
+    required this.imagePath,
+  });
+
+  @override
+  List<Object> get props => [
+        imagePath,
+      ];
+}

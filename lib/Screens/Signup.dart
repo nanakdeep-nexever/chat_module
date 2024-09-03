@@ -1,9 +1,11 @@
-import 'package:chat_module/Bloc/bloc_chat_bloc.dart';
-import 'package:chat_module/Bloc/bloc_chat_state.dart';
-import 'package:chat_module/Screens/chatroom/chatList.dart';
-import 'package:chat_module/Screens/loginScreen.dart';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../Bloc/bloc_chat_bloc.dart';
+import '../Bloc/bloc_chat_state.dart';
+import 'chatroom/chatList.dart';
 
 class Register_Screen extends StatefulWidget {
   const Register_Screen({super.key});
@@ -18,6 +20,7 @@ class _Register_ScreenState extends State<Register_Screen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  String? _selectedImagePath;
 
   bool _validateEmail(String value) {
     final emailRegExp = RegExp(r'^[^@]+@[^@]+\.[^@]+');
@@ -56,6 +59,25 @@ class _Register_ScreenState extends State<Register_Screen> {
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
                     ),
+                  ),
+                  const SizedBox(height: 20),
+                  BlocBuilder<LoginBloc, LoginState>(
+                    builder: (context, state) {
+                      return InkWell(
+                        onTap: () {
+                          context.read<LoginBloc>().add(PickImage());
+                        },
+                        child: CircleAvatar(
+                          radius: 50,
+                          backgroundImage: _selectedImagePath != null
+                              ? FileImage(File(_selectedImagePath!))
+                              : null,
+                          child: _selectedImagePath == null
+                              ? Icon(Icons.camera_alt, size: 50)
+                              : null,
+                        ),
+                      );
+                    },
                   ),
                   SizedBox(height: 20),
                   Form(
@@ -111,7 +133,7 @@ class _Register_ScreenState extends State<Register_Screen> {
                               return 'Please enter your password';
                             }
                             if (!_validatePassword(value)) {
-                              return 'Ex.Password';
+                              return 'Password must contain at least 8 characters including an uppercase letter';
                             }
                             return null;
                           },
@@ -132,56 +154,50 @@ class _Register_ScreenState extends State<Register_Screen> {
                             return _validateConfirmPassword(value);
                           },
                         ),
-                        SizedBox(height: 24),
+                        const SizedBox(height: 24),
                         BlocConsumer<LoginBloc, LoginState>(
                           listener: (context, state) {
                             if (state is AuthLoading) {
-                              CircularProgressIndicator();
+                              const CircularProgressIndicator();
                             } else if (state is AuthError) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                    content: Text('error ${state.message}')),
+                                    content: Text('Error: ${state.message}')),
                               );
                             } else if (state is AuthAuthenticated) {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(builder: (_) => ChatHome()),
                               );
-                            }
+                            } else if (state is ImagePicked) {
+                              setState(() {
+                                _selectedImagePath = state.image.path;
+                              });
+                            } else if (state is ImageUploaded) {}
                           },
                           builder: (context, state) {
-                            if (state is AuthLoading) {
-                              return CircularProgressIndicator();
-                            }
-                            return SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton(
-                                onPressed: () {
-                                  final email = _emailController.text;
-                                  final password = _passwordController.text;
-                                  final name = _usernameController.text;
-                                  if (_formKey.currentState!.validate()) {
-                                    context.read<LoginBloc>().add(
-                                        SignUpWithEmail(
-                                            email: email,
-                                            password: password,
-                                            name: name));
+                            return ElevatedButton(
+                              onPressed: () {
+                                if (_formKey.currentState!.validate()) {
+                                  if (_selectedImagePath != null) {
+                                    context.read<LoginBloc>().add(UploadImage(
+                                        imagePath: _selectedImagePath!));
                                   }
-                                },
-                                child: const Text('Register'),
-                              ),
+                                  context.read<LoginBloc>().add(
+                                        SignUpWithEmail(
+                                          email: _emailController.text.trim(),
+                                          password:
+                                              _passwordController.text.trim(),
+                                          name: _usernameController.text.trim(),
+                                        ),
+                                      );
+                                }
+                              },
+                              child: const Text('Register'),
                             );
                           },
                         ),
-                        TextButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (_) => const Login_Screen()),
-                              );
-                            },
-                            child: const Text("Already Registered?"))
+                        const SizedBox(height: 12),
                       ],
                     ),
                   ),
