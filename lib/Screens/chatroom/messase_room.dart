@@ -321,13 +321,13 @@ class _MessagingPageState extends State<MessagingPage> {
             builder: (context, snapshot) {
               final users = snapshot.data?.docs;
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
+                return Center(child: CircularProgressIndicator());
               }
               if (snapshot.hasError) {
                 return Center(child: Text('Error: ${snapshot.error}'));
               }
               if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                return const Center(child: Text('No users found.'));
+                return Center(child: Text('No users found.'));
               }
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -335,9 +335,9 @@ class _MessagingPageState extends State<MessagingPage> {
                   Text(users![0]['name'].toString()),
                   if (users![0]['status']) ...[
                     if (users![0]['typing']) ...[
-                      const Text('typing...'),
+                      Text('typing...'),
                     ] else ...[
-                      const Text('online')
+                      Text('online')
                     ]
                   ]
                 ],
@@ -348,7 +348,7 @@ class _MessagingPageState extends State<MessagingPage> {
             onPressed: () {
               context.read<LoginBloc>().add(SignOut());
             },
-            icon: const Icon(Icons.ice_skating),
+            icon: Icon(Icons.ice_skating),
           ),
         ],
       ),
@@ -360,7 +360,7 @@ class _MessagingPageState extends State<MessagingPage> {
               MaterialPageRoute(builder: (_) => Login_Screen()),
             );
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Logged out")),
+              SnackBar(content: Text("Logged out")),
             );
           }
         },
@@ -414,45 +414,17 @@ class _MessagingPageState extends State<MessagingPage> {
 
                 _setTyping(true);
 
-                _typingTimer = Timer(const Duration(seconds: 1), () {
+                _typingTimer = Timer(Duration(seconds: 1), () {
                   _setTyping(false);
                 });
               },
               decoration: InputDecoration(
-                filled: true,
-                fillColor: Colors.grey[200], // Background color
-                hintText: 'Enter your message...',
-                hintStyle:
-                    TextStyle(color: Colors.grey[600]), // Hint text color
-                contentPadding:
-                    const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30.0),
-                  borderSide: BorderSide.none, // Remove the border
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30.0),
-                  borderSide: BorderSide.none, // Remove the border
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30.0),
-                  borderSide: const BorderSide(
-                    color: Colors.blue, // Border color when focused
-                    width: 2.0,
-                  ),
-                ),
-                suffixIcon: IconButton(
-                  icon: Icon(Icons.emoji_emotions_outlined,
-                      color: Colors.grey[600]),
-                  onPressed: () {
-                    // Add emoji picker functionality here
-                  },
-                ),
+                labelText: 'Enter your message...',
               ),
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.send),
+            icon: Icon(Icons.send),
             onPressed: () {
               String? from = _firebaseAuth.currentUser?.email;
               _sendMessage(from);
@@ -490,9 +462,9 @@ class _MessagingPageState extends State<MessagingPage> {
                   context: context,
                   builder: (context) {
                     return AlertDialog(
-                      title: const Text('Delete Message'),
-                      content: const Text(
-                          'Are you sure you want to delete this message?'),
+                      title: Text('Delete Message'),
+                      content:
+                          Text('Are you sure you want to delete this message?'),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.of(context).pop(),
@@ -526,7 +498,7 @@ class _MessagingPageState extends State<MessagingPage> {
                       if (message.type == MessageType.text)
                         Container(
                           decoration: BoxDecoration(
-                            color: Colors.green.shade100,
+                            color: Colors.white,
                             border: Border.all(
                               color:
                                   Colors.white24, // Set the border color here
@@ -537,9 +509,9 @@ class _MessagingPageState extends State<MessagingPage> {
                           ),
                           child: ClipRRect(
                             borderRadius: isSentByCurrentUser
-                                ? const BorderRadius.only(
+                                ? BorderRadius.only(
                                     topLeft: Radius.circular(20))
-                                : const BorderRadius.only(
+                                : BorderRadius.only(
                                     topRight: Radius.circular(20)),
                             child: Padding(
                               padding: EdgeInsets.all(14),
@@ -549,7 +521,7 @@ class _MessagingPageState extends State<MessagingPage> {
                                   textAlign: isSentByCurrentUser
                                       ? TextAlign.end
                                       : TextAlign.start,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                       color: Colors.black,
                                       wordSpacing: 2,
                                       letterSpacing: .5),
@@ -611,6 +583,7 @@ class _MessagingPageState extends State<MessagingPage> {
     );
   }
 }
+  updateLastM(String tosms, String from, String msg) async {
 
 class VideoPlayerWidget extends StatefulWidget {
   final String url;

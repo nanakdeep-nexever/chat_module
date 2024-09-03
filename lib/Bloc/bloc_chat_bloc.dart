@@ -26,6 +26,9 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
         email: event.email,
         password: event.password,
       );
+      if(userCredential != null){
+        FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser?.uid).update({'Fcm_token':NotificationHandler.token});
+      }
       emit(AuthAuthenticated(user: userCredential.user));
     } catch (e) {
       emit(AuthError(e.toString()));
