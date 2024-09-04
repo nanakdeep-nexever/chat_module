@@ -21,7 +21,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 class MessagingPage extends StatefulWidget {
   final String tosms;
 
-  MessagingPage(this.tosms);
+  const MessagingPage(this.tosms, {super.key});
 
   @override
   _MessagingPageState createState() => _MessagingPageState();
@@ -64,7 +64,7 @@ class _MessagingPageState extends State<MessagingPage> {
         onScreenStatus = doc.get('on_screen');
       }
       print(
-          "current user opencheck ${FirebaseAuth.instance.currentUser?.email}  and Reciver ${onScreenStatus}");
+          "current user opencheck ${FirebaseAuth.instance.currentUser?.email}  and Reciver $onScreenStatus");
       if (onScreenStatus.toString() !=
           FirebaseAuth.instance.currentUser?.email.toString()) {
         QuerySnapshot FcmQuery = await FirebaseFirestore.instance
@@ -159,7 +159,7 @@ class _MessagingPageState extends State<MessagingPage> {
     final status = await Permission.camera.request();
     if (mediaType == MediaType.image && !status.isGranted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Camera permission denied")),
+        const SnackBar(content: Text("Camera permission denied")),
       );
       return;
     }
@@ -284,11 +284,11 @@ class _MessagingPageState extends State<MessagingPage> {
               ),
             ],
             TextButton(
-              child: Text('Gallery'),
+              child: const Text('Gallery'),
               onPressed: () => Navigator.of(context).pop(ImageSource.gallery),
             ),
             TextButton(
-              child: Text('Cancel'),
+              child: const Text('Cancel'),
               onPressed: () => Navigator.of(context).pop(),
             ),
           ],
@@ -370,12 +370,12 @@ class _MessagingPageState extends State<MessagingPage> {
                       CircleAvatar(
                         radius: 25,
                         backgroundImage: users![0]['img'] != null &&
-                                users![0]['img'].isNotEmpty
-                            ? NetworkImage(users![0]['img'])
+                                users[0]['img'].isNotEmpty
+                            ? NetworkImage(users[0]['img'])
                             : const AssetImage('assets/placeholder.png')
                                 as ImageProvider,
                       ),
-                      if (users![0]['status'])
+                      if (users[0]['status'])
                         Positioned(
                           bottom: 0,
                           right: 0,
@@ -398,9 +398,9 @@ class _MessagingPageState extends State<MessagingPage> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(users![0]['name'].toString()),
-                      if (users![0]['status']) ...[
-                        if (users![0]['typing']) ...[
+                      Text(users[0]['name'].toString()),
+                      if (users[0]['status']) ...[
+                        if (users[0]['typing']) ...[
                           const Text(
                             'typing...',
                             style: TextStyle(

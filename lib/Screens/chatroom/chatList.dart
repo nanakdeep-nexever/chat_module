@@ -1,4 +1,3 @@
-import 'dart:math';
 
 import 'package:chat_module/Bloc/bloc_chat_bloc.dart';
 import 'package:chat_module/Bloc/bloc_chat_state.dart';
@@ -17,8 +16,8 @@ class ChatHome extends StatefulWidget {
 }
 
 class _ChatHomeState extends State<ChatHome> with WidgetsBindingObserver {
-  FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
-  FirebaseFirestore _firstore = FirebaseFirestore.instance;
+  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+  final FirebaseFirestore _firstore = FirebaseFirestore.instance;
 
   @override
   void initState() {
@@ -81,7 +80,7 @@ class _ChatHomeState extends State<ChatHome> with WidgetsBindingObserver {
           if (state is AuthUnauthenticated) {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => Login_Screen()),
+              MaterialPageRoute(builder: (_) => const Login_Screen()),
             );
           }
         },

@@ -39,7 +39,7 @@ Future<void> main() async {
   const AndroidInitializationSettings initializationSettingsAndroid =
   AndroidInitializationSettings('@mipmap/ic_test');
 
-  final InitializationSettings initializationSettings = InitializationSettings(
+  const InitializationSettings initializationSettings = InitializationSettings(
     android: initializationSettingsAndroid,
     iOS: null, // iOS settings can be added here
   );
@@ -51,7 +51,7 @@ Future<void> main() async {
   await NotificationHandler.init();
   FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
 
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 void _handleForegroundMessage(RemoteMessage message) {
@@ -115,7 +115,7 @@ Future<void> _showNotification(RemoteMessage message) async {
 
 
 class MyApp extends StatefulWidget {
-  MyApp({super.key});
+  const MyApp({super.key});
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -174,7 +174,7 @@ class _MyAppState extends State<MyApp> {
       child: MaterialApp(
         title: 'Flutter',
         theme: brightness == Brightness.light ? theme.light() : theme.dark(),
-        home: user == null ? Login_Screen(): ChatHome(),
+        home: user == null ? const Login_Screen(): const ChatHome(),
       ),
     );
   }

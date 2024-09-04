@@ -111,7 +111,7 @@ class NotificationHandler {
       if (_token != null) {
         if (kDebugMode) {
           print('Registration Token: $_token');
-          User? user =FirebaseAuth.instance?.currentUser;
+          User? user =FirebaseAuth.instance.currentUser;
           if(user != null){
             FirebaseFirestore.instance.collection('users').doc(user.uid).update({"Fcm_token": _token});
           }

@@ -98,7 +98,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
       if (pickedFile != null) {
         emit(ImagePicked(File(pickedFile.path)));
       } else {
-        emit(AuthError('No image selected'));
+        emit(const AuthError('No image selected'));
       }
     } catch (e) {
       emit(AuthError(e.toString()));
@@ -110,7 +110,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
       emit(AuthLoading());
 
       if (event.imagePath.isEmpty) {
-        emit(AuthError('No image path provided'));
+        emit(const AuthError('No image path provided'));
         return;
       }
 
