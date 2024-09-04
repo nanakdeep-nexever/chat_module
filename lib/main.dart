@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:chat_module/Bloc/bloc_chat_bloc.dart';
+import 'package:chat_module/Bloc/profile_bloc/profile_bloc.dart';
 import 'package:chat_module/Screens/chatroom/chatList.dart';
 import 'package:chat_module/Screens/loginScreen.dart';
 import 'package:chat_module/Theme_data/chat_theme.dart';
@@ -14,12 +15,13 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get_it/get_it.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
+
 import 'Bloc/message_send.dart';
 import 'Notification_handel/Notification_handle.dart';
 import 'firebase_options.dart';
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-FlutterLocalNotificationsPlugin();
+    FlutterLocalNotificationsPlugin();
 
 final locator = GetIt.instance;
 NotificationHandler notificatioHendler = NotificationHandler();
@@ -37,7 +39,7 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   const AndroidInitializationSettings initializationSettingsAndroid =
-  AndroidInitializationSettings('@mipmap/ic_test');
+      AndroidInitializationSettings('@mipmap/ic_test');
 
   const InitializationSettings initializationSettings = InitializationSettings(
     android: initializationSettingsAndroid,
@@ -56,47 +58,42 @@ Future<void> main() async {
 
 void _handleForegroundMessage(RemoteMessage message) {
   if (message.notification != null) {
-    _showNotification(message
-    );
+    _showNotification(message);
   }
 }
- Future<String> _downloadAndSaveFile(
-String url, String fileName) async {
-if (url.isNotEmpty == true) {
-final Directory directory = await getApplicationDocumentsDirectory();
-final String filePath = '${directory.path}/$fileName';
-final http.Response response = await http.get(Uri.parse(url));
-final File file = File(filePath);
-await file.writeAsBytes(response.bodyBytes);
-return filePath;
-}
-return "";
-}
 
+Future<String> _downloadAndSaveFile(String url, String fileName) async {
+  if (url.isNotEmpty == true) {
+    final Directory directory = await getApplicationDocumentsDirectory();
+    final String filePath = '${directory.path}/$fileName';
+    final http.Response response = await http.get(Uri.parse(url));
+    final File file = File(filePath);
+    await file.writeAsBytes(response.bodyBytes);
+    return filePath;
+  }
+  return "";
+}
 
 Future<void> _showNotification(RemoteMessage message) async {
-  final String? imgUrl = message.data['imageUrl'] ?? 'https://www.pushengage.com/wp-content/uploads/2023/06/In-App-Notification-Examples.png';
+  final String? imgUrl = message.data['imageUrl'] ??
+      'https://www.pushengage.com/wp-content/uploads/2023/06/In-App-Notification-Examples.png';
   String? imagePath;
 
   if (imgUrl != null && imgUrl.isNotEmpty) {
-
     imagePath = await _downloadAndSaveFile(imgUrl, 'notification_image.jpg');
   }
-   AndroidNotificationDetails androidPlatformChannelSpecifics =
-  AndroidNotificationDetails(
+  AndroidNotificationDetails androidPlatformChannelSpecifics =
+      AndroidNotificationDetails(
     'your_channel_id',
     'your_channel_name',
-    largeIcon: imagePath != null
-        ? FilePathAndroidBitmap(imagePath)
-        : null,
+    largeIcon: imagePath != null ? FilePathAndroidBitmap(imagePath) : null,
     channelDescription: 'your_channel_description',
     importance: Importance.max,
     priority: Priority.high,
     ticker: 'ticker',
-
   );
 
-   NotificationDetails platformChannelSpecifics = NotificationDetails(
+  NotificationDetails platformChannelSpecifics = NotificationDetails(
     android: androidPlatformChannelSpecifics,
     iOS: null, // iOS settings can be added here
   );
@@ -105,14 +102,10 @@ Future<void> _showNotification(RemoteMessage message) async {
     0,
     message.notification?.title.toString(),
     message.notification?.body.toString(),
-
     platformChannelSpecifics,
     payload: 'item x',
   );
 }
-
-
-
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
@@ -137,13 +130,12 @@ class _MyAppState extends State<MyApp> {
 
   void _handleMessage(RemoteMessage message) {
     _messagingBloc.addstream(message);
-
   }
 
   void setupbackground() async {
     print("trigrred");
     RemoteMessage? initialMessage =
-    await FirebaseMessaging.instance.getInitialMessage();
+        await FirebaseMessaging.instance.getInitialMessage();
     if (initialMessage != null) {
       print("not empty");
       _handleMessage(initialMessage);
@@ -160,8 +152,7 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     TextTheme textTheme = createTextTheme(context, "Roboto", "Poppins");
-    User? user =FirebaseAuth.instance.currentUser;
-
+    User? user = FirebaseAuth.instance.currentUser;
 
     Chat_Module_Theme theme = Chat_Module_Theme(textTheme);
     final brightness = View.of(context).platformDispatcher.platformBrightness;
@@ -170,11 +161,15 @@ class _MyAppState extends State<MyApp> {
         BlocProvider(
           create: (context) => LoginBloc(),
         ),
+        BlocProvider(
+          create: (context) => ProfileBloc(),
+        ),
       ],
       child: MaterialApp(
+        debugShowCheckedModeBanner: false,
         title: 'Flutter',
         theme: brightness == Brightness.light ? theme.light() : theme.dark(),
-        home: user == null ? const Login_Screen(): const ChatHome(),
+        home: user == null ? const Login_Screen() : const ChatHome(),
       ),
     );
   }

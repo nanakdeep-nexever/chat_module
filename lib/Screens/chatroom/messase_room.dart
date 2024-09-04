@@ -6,6 +6,7 @@ import 'package:chat_module/Bloc/bloc_chat_state.dart';
 import 'package:chat_module/Chat_Model/chatModel.dart';
 import 'package:chat_module/Chat_Model/enums.dart';
 import 'package:chat_module/Notification_handel/Notification_handle.dart';
+import 'package:chat_module/Screens/chatroom/chats_profile.dart';
 import 'package:chat_module/Screens/loginScreen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -150,7 +151,7 @@ class _MessagingPageState extends State<MessagingPage> {
 
   Future<void> uploadMediaAndSaveReference(String? from) async {
     final picker = ImagePicker();
-    final mediaType = await _showMediaSelectionDialog();
+    final mediaType = await _showMediaSelectionDialog(context);
 
     if (mediaType == null) {
       return;
@@ -171,8 +172,7 @@ class _MessagingPageState extends State<MessagingPage> {
           ? await picker.pickImage(source: source)
           : mediaType == MediaType.video
               ? await picker.pickVideo(source: source)
-              : await picker.pickVideo(
-                  source: source); // Handle document uploads if applicable
+              : await picker.pickVideo(source: source);
 
       if (pickedFile == null) {
         return;
@@ -211,6 +211,58 @@ class _MessagingPageState extends State<MessagingPage> {
     }
   }
 
+  Future<void> openCamera(String? from) async {
+    final picker = ImagePicker();
+
+    final cameraStatus = await Permission.camera.request();
+
+    final storageStatus = await Permission.storage.request();
+
+    if (cameraStatus.isGranted && storageStatus.isGranted) {
+      try {
+        const source = ImageSource.camera;
+        final pickedFile = await picker.pickImage(source: source);
+
+        if (pickedFile == null) {
+          return;
+        }
+
+        File file = File(pickedFile.path);
+        String fileName = "now_${DateTime.now().millisecondsSinceEpoch}";
+        Reference storageRef =
+            FirebaseStorage.instance.ref().child('uploads/$fileName');
+        UploadTask uploadTask = storageRef.putFile(file);
+        TaskSnapshot snapshot = await uploadTask;
+        String downloadUrl = await snapshot.ref.getDownloadURL();
+
+        const messageType = MessageType.image;
+
+        final message = Message_Model(
+            from: from!,
+            to: widget.tosms,
+            type: messageType,
+            content: downloadUrl,
+            fileName: fileName,
+            createdAt: Timestamp.now(),
+            read: false);
+
+        await _firestore.collection('messages').add(message.toMap());
+        updateLastM(widget.tosms, from.toString(), 'image', downloadUrl);
+        _messageController.clear();
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Failed to upload file: $e")),
+        );
+      }
+    } else {
+      // Handle the case where the user denies permissions
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text("Camera and storage permissions are required.")),
+      );
+    }
+  }
+
   void setTyping(bool status) {
     _firestore
         .collection('users')
@@ -240,30 +292,50 @@ class _MessagingPageState extends State<MessagingPage> {
     super.initState();
   }
 
-  Future<MediaType?> _showMediaSelectionDialog() async {
-    return showDialog<MediaType>(
+  Future<MediaType?> _showMediaSelectionDialog(BuildContext context) async {
+    return showModalBottomSheet<MediaType>(
       context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
+      ),
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Select Media Type'),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Image'),
-              onPressed: () => Navigator.of(context).pop(MediaType.image),
-            ),
-            TextButton(
-              child: const Text('Video'),
-              onPressed: () => Navigator.of(context).pop(MediaType.video),
-            ),
-            TextButton(
-              child: const Text('Document'),
-              onPressed: () => Navigator.of(context).pop(MediaType.document),
-            ),
-            TextButton(
-              child: const Text('Cancel'),
-              onPressed: () => Navigator.of(context).pop(),
-            ),
-          ],
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              const Text(
+                'Select Media Type',
+                style: TextStyle(
+                  fontSize: 20.0,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16.0),
+              ListTile(
+                leading: const Icon(Icons.image, color: Colors.blue),
+                title: Text('Image'),
+                onTap: () => Navigator.of(context).pop(MediaType.image),
+              ),
+              ListTile(
+                leading: const Icon(Icons.videocam, color: Colors.green),
+                title: Text('Video'),
+                onTap: () => Navigator.of(context).pop(MediaType.video),
+              ),
+              ListTile(
+                leading:
+                    const Icon(Icons.insert_drive_file, color: Colors.orange),
+                title: const Text('Document'),
+                onTap: () => Navigator.of(context).pop(MediaType.document),
+              ),
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.cancel, color: Colors.red),
+                title: const Text('Cancel'),
+                onTap: () => Navigator.of(context).pop(),
+              ),
+            ],
+          ),
         );
       },
     );
@@ -273,7 +345,6 @@ class _MessagingPageState extends State<MessagingPage> {
     return showDialog<ImageSource>(
       context: context,
       builder: (BuildContext context) {
-        // Only show the camera option if mediaType is Image
         return AlertDialog(
           title: const Text('Select Image Source'),
           actions: <Widget>[
@@ -349,6 +420,7 @@ class _MessagingPageState extends State<MessagingPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        titleSpacing: -9.0,
         title: StreamBuilder(
             stream: FirebaseFirestore.instance
                 .collection("users")
@@ -363,69 +435,89 @@ class _MessagingPageState extends State<MessagingPage> {
               if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                 return const Center(child: Text('No users found.'));
               }
-              return Row(
-                children: [
-                  Stack(
-                    children: [
-                      CircleAvatar(
-                        radius: 25,
-                        backgroundImage: users![0]['img'] != null &&
-                                users[0]['img'].isNotEmpty
-                            ? NetworkImage(users[0]['img'])
-                            : const AssetImage('assets/placeholder.png')
-                                as ImageProvider,
-                      ),
-                      if (users[0]['status'])
-                        Positioned(
-                          bottom: 0,
-                          right: 0,
-                          child: Container(
-                            width: 12,
-                            height: 12,
-                            decoration: BoxDecoration(
-                              color: Colors.green,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: Colors.white,
-                                width: 2,
+              return GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => ChatsProfile(
+                                img: users[0]['img'],
+                                name: users[0]['name'],
+                                email: users[0]['email'],
+                              )));
+                },
+                child: Row(
+                  children: [
+                    Stack(
+                      children: [
+                        CircleAvatar(
+                          radius: 25,
+                          backgroundImage: users![0]['img'] != null &&
+                                  users[0]['img'].isNotEmpty
+                              ? NetworkImage(users[0]['img'])
+                              : const AssetImage('assets/placeholder.png')
+                                  as ImageProvider,
+                        ),
+                        if (users[0]['status'])
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: Container(
+                              width: 12,
+                              height: 12,
+                              decoration: BoxDecoration(
+                                color: Colors.green,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 2,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(width: 10),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(users[0]['name'].toString()),
-                      if (users[0]['status']) ...[
-                        if (users[0]['typing']) ...[
-                          const Text(
-                            'typing...',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w400,
-                              color: Colors.grey,
+                      ],
+                    ),
+                    const SizedBox(width: 10),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(users[0]['name'].toString()),
+                        if (users[0]['status']) ...[
+                          if (users[0]['typing']) ...[
+                            const Text(
+                              'typing...',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w400,
+                                color: Colors.grey,
+                              ),
                             ),
-                          ),
-                        ] else ...[
-                          const Text(
-                            'online',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w400,
-                              color: Colors.grey,
+                          ] else ...[
+                            const Text(
+                              'online',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w400,
+                                color: Colors.grey,
+                              ),
                             ),
-                          ),
+                          ],
                         ],
                       ],
-                    ],
-                  ),
-                ],
+                    ),
+                  ],
+                ),
               );
             }),
         actions: [
+          IconButton(
+            onPressed: () {},
+            icon: const Icon(Icons.videocam_outlined),
+          ),
+          IconButton(
+            onPressed: () {},
+            icon: const Icon(Icons.call_outlined),
+          ),
           IconButton(
             onPressed: () {},
             icon: const Icon(Icons.more_vert),
@@ -480,7 +572,10 @@ class _MessagingPageState extends State<MessagingPage> {
       child: Row(
         children: <Widget>[
           Expanded(
-              child: TextField(
+              child: TextFormField(
+            maxLines: null,
+            minLines: 1,
+            textInputAction: TextInputAction.newline,
             controller: _messageController,
             onChanged: (string) {
               if (_typingTimer?.isActive ?? false) _typingTimer!.cancel();
@@ -494,7 +589,7 @@ class _MessagingPageState extends State<MessagingPage> {
             decoration: InputDecoration(
               filled: true,
               fillColor: Colors.grey[200],
-              hintText: 'Enter your message...',
+              hintText: 'Message...',
               hintStyle: TextStyle(color: Colors.grey[600]),
               contentPadding:
                   const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
@@ -516,9 +611,7 @@ class _MessagingPageState extends State<MessagingPage> {
               prefixIcon: IconButton(
                 icon: Icon(Icons.emoji_emotions_outlined,
                     color: Colors.grey[600]),
-                onPressed: () {
-                  // Handle emoji icon press
-                },
+                onPressed: () {},
               ),
               suffixIcon: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8.0),
@@ -534,7 +627,10 @@ class _MessagingPageState extends State<MessagingPage> {
                     ),
                     IconButton(
                       icon: Icon(Icons.camera_alt, color: Colors.grey[600]),
-                      onPressed: () {},
+                      onPressed: () {
+                        String? from = _firebaseAuth.currentUser?.email;
+                        openCamera(from);
+                      },
                     ),
                   ],
                 ),

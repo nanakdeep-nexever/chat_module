@@ -28,7 +28,7 @@ class NotificationHandler {
         print('Permission granted: ${settings.authorizationStatus}');
       }
 
-      await _updateToken(); // Update token on initialization
+      await _updateToken();
     } catch (e, s) {
       print("Error during initialization: $e");
       print("Stack trace: $s");
@@ -37,9 +37,9 @@ class NotificationHandler {
 
   static Future<void> sendNotification(
       {required String FCM_token,
-        required String title,
-        required String body,
-        Map? data}) async {
+      required String title,
+      required String body,
+      Map? data}) async {
     final message = {
       'message': {
         'token': FCM_token,
@@ -69,12 +69,12 @@ class NotificationHandler {
  ''';
 
       final accountCredentials =
-      ServiceAccountCredentials.fromJson(serviceAccountJson);
+          ServiceAccountCredentials.fromJson(serviceAccountJson);
 
       final scopes = ['https://www.googleapis.com/auth/firebase.messaging'];
 
       final authClient =
-      await clientViaServiceAccount(accountCredentials, scopes);
+          await clientViaServiceAccount(accountCredentials, scopes);
 
       return (authClient.credentials.accessToken.data).toString();
     }
@@ -111,9 +111,12 @@ class NotificationHandler {
       if (_token != null) {
         if (kDebugMode) {
           print('Registration Token: $_token');
-          User? user =FirebaseAuth.instance.currentUser;
-          if(user != null){
-            FirebaseFirestore.instance.collection('users').doc(user.uid).update({"Fcm_token": _token});
+          User? user = FirebaseAuth.instance.currentUser;
+          if (user != null) {
+            FirebaseFirestore.instance
+                .collection('users')
+                .doc(user.uid)
+                .update({"Fcm_token": _token});
           }
         }
       } else {

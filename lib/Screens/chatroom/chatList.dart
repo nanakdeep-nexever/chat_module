@@ -1,4 +1,3 @@
-
 import 'package:chat_module/Bloc/bloc_chat_bloc.dart';
 import 'package:chat_module/Bloc/bloc_chat_state.dart';
 import 'package:chat_module/Screens/chatroom/messase_room.dart';
@@ -7,6 +6,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
+import 'edit_profile_screen.dart';
 
 class ChatHome extends StatefulWidget {
   const ChatHome({super.key});
@@ -25,10 +26,10 @@ class _ChatHomeState extends State<ChatHome> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     super.initState();
   }
+
   Future<bool> _isUserOnScreen(String email) async {
-    final userDoc = _firstore
-        .collection('users')
-        .where('email', isEqualTo: email);
+    final userDoc =
+        _firstore.collection('users').where('email', isEqualTo: email);
     final snapshot = await userDoc.get();
     if (snapshot.docs.isNotEmpty) {
       final doc = snapshot.docs.first;
@@ -65,14 +66,154 @@ class _ChatHomeState extends State<ChatHome> with WidgetsBindingObserver {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: const Text('Chat Home'),
-        actions: [
-          IconButton(
-            onPressed: () {
-              context.read<LoginBloc>().add(SignOut());
-            },
-            icon: const Icon(Icons.logout),
+        title: RichText(
+          text: const TextSpan(
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
+            children: [
+              TextSpan(
+                text: 'M',
+                style: TextStyle(color: Colors.red),
+              ),
+              TextSpan(
+                text: 'i',
+                style: TextStyle(color: Colors.orange),
+              ),
+              TextSpan(
+                text: 'n',
+                style: TextStyle(color: Colors.yellow),
+              ),
+              TextSpan(
+                text: 'i',
+                style: TextStyle(color: Colors.green),
+              ),
+              TextSpan(
+                text: ' ',
+                style: TextStyle(color: Colors.transparent),
+              ),
+              TextSpan(
+                text: 'C',
+                style: TextStyle(color: Colors.blue),
+              ),
+              TextSpan(
+                text: 'h',
+                style: TextStyle(color: Colors.indigo),
+              ),
+              TextSpan(
+                text: 'a',
+                style: TextStyle(color: Colors.purple),
+              ),
+              TextSpan(
+                text: 't',
+                style: TextStyle(color: Colors.pink),
+              ),
+              TextSpan(
+                text: ' ',
+                style: TextStyle(color: Colors.transparent),
+              ),
+              TextSpan(
+                text: 'A',
+                style: TextStyle(color: Colors.teal),
+              ),
+              TextSpan(
+                text: 'p',
+                style: TextStyle(color: Colors.cyan),
+              ),
+              TextSpan(
+                text: 'p',
+                style: TextStyle(color: Colors.lime),
+              ),
+            ],
           ),
+        ),
+        actions: [
+          StreamBuilder<DocumentSnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection("users")
+                .doc(FirebaseAuth.instance.currentUser!.uid)
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              } else if (snapshot.hasError) {
+                return const Center(child: Text('Error loading user details'));
+              } else if (!snapshot.hasData || !snapshot.data!.exists) {
+                return const Center(child: Text('No user data found'));
+              } else {
+                var userData = snapshot.data!.data() as Map<String, dynamic>;
+
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const UserProfileScreen(),
+                      ),
+                    );
+                  },
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Center(
+                        child: CircleAvatar(
+                          radius: 20,
+                          backgroundImage: userData['img'] != null
+                              ? NetworkImage(userData['img'])
+                              : const AssetImage(
+                                      'assets/images/user_profile.jpg')
+                                  as ImageProvider,
+                        ),
+                      ),
+                      const SizedBox(
+                        width: 30,
+                      )
+                    ],
+                  ),
+                );
+              }
+            },
+          ),
+          /*  PopupMenuButton<String>(
+            onSelected: (value) {
+              if (value == 'edit_profile') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const UserProfileScreen(),
+                  ),
+                );
+              } else if (value == 'logout') {
+                context.read<LoginBloc>().add(SignOut());
+              }
+            },
+            itemBuilder: (BuildContext context) {
+              return [
+                const PopupMenuItem(
+                  value: 'edit_profile',
+                  child: Row(
+                    children: [
+                      Icon(Icons.edit, color: Colors.black),
+                      SizedBox(width: 8),
+                      Text('Edit Profile'),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'logout',
+                  child: Row(
+                    children: [
+                      Icon(Icons.logout, color: Colors.black),
+                      SizedBox(width: 8),
+                      Text('Logout'),
+                    ],
+                  ),
+                ),
+              ];
+            },
+            icon: const Icon(Icons.more_vert),
+          ),*/
         ],
       ),
       body: BlocConsumer<LoginBloc, LoginState>(
@@ -130,15 +271,15 @@ class _ChatHomeState extends State<ChatHome> with WidgetsBindingObserver {
                       ),
                       subtitle: FutureBuilder<bool>(
                         future: _isUserOnScreen(email!),
-                        builder: (context, snapshot){
-                          final isonscreen =snapshot.data ?? false;
+                        builder: (context, snapshot) {
+                          final isonscreen = snapshot.data ?? false;
                           final typing = user['typing'] ?? false;
                           print("typing  $typing    and isonscreen $typing");
                           return typing && isonscreen
                               ? const Text('typing....')
                               : (user['LastMessage'].toString().isNotEmpty
-                              ? Text('${user['LastMessage']}')
-                              : const SizedBox.shrink());
+                                  ? Text('${user['LastMessage']}')
+                                  : const SizedBox.shrink());
                         },
                       ),
                       trailing: StreamBuilder<QuerySnapshot>(
