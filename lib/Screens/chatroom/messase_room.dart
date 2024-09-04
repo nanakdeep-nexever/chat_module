@@ -38,14 +38,10 @@ class _MessagingPageState extends State<MessagingPage> {
     String onScreenStatus = '';
 
     try {
-      QuerySnapshot tosmasupdate = await FirebaseFirestore.instance
-          .collection('users')
-          .where('email', isEqualTo: tosms)
-          .get();
-      QuerySnapshot fromsmsupdate = await FirebaseFirestore.instance
-          .collection('users')
-          .where('email', isEqualTo: from)
-          .get();
+      QuerySnapshot tosmasupdate =
+          await FirebaseFirestore.instance.collection('users').where('email', isEqualTo: tosms).get();
+      QuerySnapshot fromsmsupdate =
+          await FirebaseFirestore.instance.collection('users').where('email', isEqualTo: from).get();
 
       for (QueryDocumentSnapshot doc in fromsmsupdate.docs) {
         doc.reference.update({'LastMessage': msg ?? ''});
@@ -55,31 +51,22 @@ class _MessagingPageState extends State<MessagingPage> {
         doc.reference.update({'LastMessage': msg ?? ''});
       }
 
-      final userDoc = _firestore
-          .collection('users')
-          .where('email', isEqualTo: widget.tosms);
+      final userDoc = _firestore.collection('users').where('email', isEqualTo: widget.tosms);
       final snapshot = await userDoc.get();
       if (snapshot.docs.isNotEmpty) {
         final doc = snapshot.docs.first;
         onScreenStatus = doc.get('on_screen');
       }
-      print(
-          "current user opencheck ${FirebaseAuth.instance.currentUser?.email}  and Reciver $onScreenStatus");
-      if (onScreenStatus.toString() !=
-          FirebaseAuth.instance.currentUser?.email.toString()) {
-        QuerySnapshot FcmQuery = await FirebaseFirestore.instance
-            .collection('users')
-            .where('email', isEqualTo: tosms)
-            .get();
+      print("current user opencheck ${FirebaseAuth.instance.currentUser?.email}  and Reciver $onScreenStatus");
+      if (onScreenStatus.toString() != FirebaseAuth.instance.currentUser?.email.toString()) {
+        QuerySnapshot FcmQuery =
+            await FirebaseFirestore.instance.collection('users').where('email', isEqualTo: tosms).get();
 
         if (FcmQuery.docs.isNotEmpty) {
           DocumentSnapshot documentSnapshot = FcmQuery.docs.first;
           String fcmToken = documentSnapshot.get('Fcm_token') as String;
           NotificationHandler.sendNotification(
-              FCM_token: fcmToken,
-              title: "New Message",
-              body: "$msg",
-              data: {'imageUrl': imgurl ?? ''});
+              FCM_token: fcmToken, title: "New Message", body: "$msg", data: {'imageUrl': imgurl ?? ''});
         }
       }
 
@@ -113,10 +100,7 @@ class _MessagingPageState extends State<MessagingPage> {
 
   void _setTyping(bool status) async {
     try {
-      await _firestore
-          .collection('users')
-          .doc(_firebaseAuth.currentUser!.uid)
-          .update({'typing': status});
+      await _firestore.collection('users').doc(_firebaseAuth.currentUser!.uid).update({'typing': status});
     } catch (e) {
       print('Error updating typing status: $e');
     }
@@ -126,10 +110,8 @@ class _MessagingPageState extends State<MessagingPage> {
     final toSms = widget.tosms;
 
     try {
-      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-          .collection('messages')
-          .where('from', isEqualTo: toSms)
-          .get();
+      QuerySnapshot querySnapshot =
+          await FirebaseFirestore.instance.collection('messages').where('from', isEqualTo: toSms).get();
 
       for (QueryDocumentSnapshot doc in querySnapshot.docs) {
         doc.reference.update({'read': true});
@@ -165,14 +147,12 @@ class _MessagingPageState extends State<MessagingPage> {
     }
 
     try {
-      final source =
-          await _showImageSourceDialog(mediaType) ?? ImageSource.gallery;
+      final source = await _showImageSourceDialog(mediaType) ?? ImageSource.gallery;
       final pickedFile = mediaType == MediaType.image
           ? await picker.pickImage(source: source)
           : mediaType == MediaType.video
               ? await picker.pickVideo(source: source)
-              : await picker.pickVideo(
-                  source: source); // Handle document uploads if applicable
+              : await picker.pickVideo(source: source); // Handle document uploads if applicable
 
       if (pickedFile == null) {
         return;
@@ -180,8 +160,7 @@ class _MessagingPageState extends State<MessagingPage> {
 
       File file = File(pickedFile.path);
       String fileName = "now_${DateTime.now().millisecondsSinceEpoch}";
-      Reference storageRef =
-          FirebaseStorage.instance.ref().child('uploads/$fileName');
+      Reference storageRef = FirebaseStorage.instance.ref().child('uploads/$fileName');
       UploadTask uploadTask = storageRef.putFile(file);
       TaskSnapshot snapshot = await uploadTask;
       String downloadUrl = await snapshot.ref.getDownloadURL();
@@ -212,17 +191,12 @@ class _MessagingPageState extends State<MessagingPage> {
   }
 
   void setTyping(bool status) {
-    _firestore
-        .collection('users')
-        .doc(_firebaseAuth.currentUser!.uid)
-        .update({'typing': status});
+    _firestore.collection('users').doc(_firebaseAuth.currentUser!.uid).update({'typing': status});
   }
 
   Future<void> _updateOnScreenStatus(String status) async {
     try {
-      final userDoc = _firestore
-          .collection('users')
-          .where('email', isEqualTo: _firebaseAuth.currentUser!.email);
+      final userDoc = _firestore.collection('users').where('email', isEqualTo: _firebaseAuth.currentUser!.email);
       final snapshot = await userDoc.get();
 
       for (var doc in snapshot.docs) {
@@ -299,16 +273,14 @@ class _MessagingPageState extends State<MessagingPage> {
 
   Future<void> _deleteMessage(String messageId) async {
     try {
-      final messageDoc =
-          await _firestore.collection('messages').doc(messageId).get();
+      final messageDoc = await _firestore.collection('messages').doc(messageId).get();
       final messageData = messageDoc.data() as Map<String, dynamic>;
 
       final fileName = messageData['fileName'] as String?;
       final fileUrl = messageData['url'] as String?;
 
       if (fileUrl != '' && fileName != '') {
-        final storageRef =
-            FirebaseStorage.instance.ref().child('uploads/$fileName');
+        final storageRef = FirebaseStorage.instance.ref().child('uploads/$fileName');
         await storageRef.delete();
       }
 
@@ -350,10 +322,7 @@ class _MessagingPageState extends State<MessagingPage> {
     return Scaffold(
       appBar: AppBar(
         title: StreamBuilder(
-            stream: FirebaseFirestore.instance
-                .collection("users")
-                .where('email', isEqualTo: widget.tosms)
-                .snapshots(),
+            stream: FirebaseFirestore.instance.collection("users").where('email', isEqualTo: widget.tosms).snapshots(),
             builder: (context, snapshot) {
               final users = snapshot.data?.docs;
 
@@ -369,11 +338,9 @@ class _MessagingPageState extends State<MessagingPage> {
                     children: [
                       CircleAvatar(
                         radius: 25,
-                        backgroundImage: users![0]['img'] != null &&
-                                users[0]['img'].isNotEmpty
+                        backgroundImage: users![0]['img'] != null && users[0]['img'].isNotEmpty
                             ? NetworkImage(users[0]['img'])
-                            : const AssetImage('assets/placeholder.png')
-                                as ImageProvider,
+                            : const AssetImage('assets/placeholder.png') as ImageProvider,
                       ),
                       if (users[0]['status'])
                         Positioned(
@@ -449,10 +416,7 @@ class _MessagingPageState extends State<MessagingPage> {
             children: <Widget>[
               Expanded(
                 child: StreamBuilder(
-                  stream: _firestore
-                      .collection('messages')
-                      .orderBy('createdAt', descending: true)
-                      .snapshots(),
+                  stream: _firestore.collection('messages').orderBy('createdAt', descending: true).snapshots(),
                   builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(child: CircularProgressIndicator());
@@ -496,8 +460,7 @@ class _MessagingPageState extends State<MessagingPage> {
               fillColor: Colors.grey[200],
               hintText: 'Enter your message...',
               hintStyle: TextStyle(color: Colors.grey[600]),
-              contentPadding:
-                  const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+              contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(30.0),
                 borderSide: BorderSide.none,
@@ -514,8 +477,7 @@ class _MessagingPageState extends State<MessagingPage> {
                 ),
               ),
               prefixIcon: IconButton(
-                icon: Icon(Icons.emoji_emotions_outlined,
-                    color: Colors.grey[600]),
+                icon: Icon(Icons.emoji_emotions_outlined, color: Colors.grey[600]),
                 onPressed: () {
                   // Handle emoji icon press
                 },
@@ -561,8 +523,7 @@ class _MessagingPageState extends State<MessagingPage> {
         final message = Message_Model.fromDocumentSnapshot(messages![index]);
         final messageId = messages[index].id;
 
-        if ((_firebaseAuth.currentUser?.email == message.to ||
-                _firebaseAuth.currentUser?.email == message.from) &&
+        if ((_firebaseAuth.currentUser?.email == message.to || _firebaseAuth.currentUser?.email == message.from) &&
             (widget.tosms == message.to || widget.tosms == message.from)) {
           final isSentByCurrentUser = widget.tosms == message.to;
 
@@ -581,8 +542,7 @@ class _MessagingPageState extends State<MessagingPage> {
                   builder: (context) {
                     return AlertDialog(
                       title: const Text('Delete Message'),
-                      content: const Text(
-                          'Are you sure you want to delete this message?'),
+                      content: const Text('Are you sure you want to delete this message?'),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.of(context).pop(),
@@ -604,45 +564,31 @@ class _MessagingPageState extends State<MessagingPage> {
             child: Padding(
               padding: const EdgeInsets.all(10.0),
               child: Row(
-                mainAxisAlignment: isSentByCurrentUser
-                    ? MainAxisAlignment.end
-                    : MainAxisAlignment.start,
+                mainAxisAlignment: isSentByCurrentUser ? MainAxisAlignment.end : MainAxisAlignment.start,
                 children: [
                   Column(
-                    crossAxisAlignment: isSentByCurrentUser
-                        ? CrossAxisAlignment.end
-                        : CrossAxisAlignment.start,
+                    crossAxisAlignment: isSentByCurrentUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                     children: [
                       if (message.type == MessageType.text)
                         Container(
                           decoration: BoxDecoration(
-                            color: isSentByCurrentUser
-                                ? Colors.blue.shade200
-                                : Colors.grey.shade200,
+                            color: isSentByCurrentUser ? Colors.blue.shade200 : Colors.grey.shade200,
                             border: Border.all(
                               color: Colors.white24,
                               width: 1.0,
                             ),
-                            borderRadius: const BorderRadius.only(
-                                topLeft: Radius.circular(22)),
+                            borderRadius: const BorderRadius.only(topLeft: Radius.circular(22)),
                           ),
                           child: ClipRRect(
                             borderRadius: isSentByCurrentUser
-                                ? const BorderRadius.only(
-                                    topLeft: Radius.circular(20))
-                                : const BorderRadius.only(
-                                    topRight: Radius.circular(20)),
+                                ? const BorderRadius.only(topLeft: Radius.circular(20))
+                                : const BorderRadius.only(topRight: Radius.circular(20)),
                             child: Padding(
                               padding: const EdgeInsets.all(14),
                               child: Text(
                                 message.content,
-                                textAlign: isSentByCurrentUser
-                                    ? TextAlign.end
-                                    : TextAlign.start,
-                                style: const TextStyle(
-                                    color: Colors.black,
-                                    wordSpacing: 2,
-                                    letterSpacing: .5),
+                                textAlign: isSentByCurrentUser ? TextAlign.end : TextAlign.start,
+                                style: const TextStyle(color: Colors.black, wordSpacing: 2, letterSpacing: .5),
                                 overflow: TextOverflow.values.last,
                               ),
                             ),
@@ -653,8 +599,7 @@ class _MessagingPageState extends State<MessagingPage> {
                           message.content,
                           height: 75,
                           width: 65,
-                          errorBuilder: (context, error, stackTrace) =>
-                              const Icon(Icons.error),
+                          errorBuilder: (context, error, stackTrace) => const Icon(Icons.error),
                         ),
                       if (message.type == MessageType.video)
                         SizedBox(
@@ -662,8 +607,7 @@ class _MessagingPageState extends State<MessagingPage> {
                           height: 80,
                           child: VideoPlayerWidget(url: message.content),
                         ),
-                      if (message.type == MessageType.document)
-                        const Icon(Icons.description, size: 40),
+                      if (message.type == MessageType.document) const Icon(Icons.description, size: 40),
                       Text(
                         _timeFormatter.format(message.createdAt.toDate()),
                       ),
