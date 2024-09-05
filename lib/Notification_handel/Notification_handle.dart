@@ -10,30 +10,30 @@ import 'package:http/http.dart' as http;
 class NotificationHandler {
   static String? _token;
 
-  static Future<void> init() async {
-    try {
-      final messaging = FirebaseMessaging.instance;
-
-      final settings = await messaging.requestPermission(
-        alert: true,
-        announcement: false,
-        badge: true,
-        carPlay: false,
-        criticalAlert: false,
-        provisional: false,
-        sound: true,
-      );
-
-      if (kDebugMode) {
-        print('Permission granted: ${settings.authorizationStatus}');
-      }
-
-      await _updateToken();
-    } catch (e, s) {
-      print("Error during initialization: $e");
-      print("Stack trace: $s");
-    }
-  }
+  // static Future<void> init() async {
+  //   try {
+  //     final messaging = FirebaseMessaging.instance;
+  //
+  //     final settings = await messaging.requestPermission(
+  //       alert: true,
+  //       announcement: false,
+  //       badge: true,
+  //       carPlay: false,
+  //       criticalAlert: false,
+  //       provisional: false,
+  //       sound: true,
+  //     );
+  //
+  //     if (kDebugMode) {
+  //       print('Permission granted: ${settings.authorizationStatus}');
+  //     }
+  //
+  //     await _updateToken();
+  //   } catch (e, s) {
+  //     print("Error during initialization: $e");
+  //     print("Stack trace: $s");
+  //   }
+  // }
 
   static Future<void> sendNotification(
       {required String FCM_token,
@@ -50,6 +50,7 @@ class NotificationHandler {
         },
       }
     };
+    print('Notification sendNotification $message');
     Future<String> getAccessToken() async {
       const serviceAccountJson = r'''
     {
@@ -65,7 +66,6 @@ class NotificationHandler {
   "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-ubpp5%40my-chat-project-new.iam.gserviceaccount.com",
   "universe_domain": "googleapis.com"
 }
-
  ''';
 
       final accountCredentials =
@@ -93,7 +93,7 @@ class NotificationHandler {
       );
 
       if (response.statusCode == 200) {
-        print('Notification sent successfully');
+        print('Notification sent successfully ${response.body}');
       } else {
         print('Failed to send notification: ${response.statusCode}');
         print(response.body);
@@ -103,7 +103,7 @@ class NotificationHandler {
     }
   }
 
-  static Future<void> _updateToken() async {
+  static Future<void> updateToken() async {
     try {
       print("Fetching token...");
       final messaging = FirebaseMessaging.instance;

@@ -1,6 +1,10 @@
 import 'dart:async';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/material.dart';
+
+import '../Screens/chatroom/messase_room.dart';
+import '../main.dart';
 
 class MessagingBloc {
   final _messageStreamController = StreamController<RemoteMessage>.broadcast();
@@ -22,36 +26,16 @@ class MessagingBloc {
     print("Handling a background message: ${message.messageId}");
   }
 
-  // Uncomment and complete this method if you need to handle messages on app launch
-  /*
-  void _setupBackground() async {
-    RemoteMessage? initialMessage = await FirebaseMessaging.instance.getInitialMessage();
-    if (initialMessage != null) {
-      _messageStreamController.add(initialMessage);
-      _handleMessage(initialMessage);
-    }
-    FirebaseMessaging.onMessageOpenedApp.listen(_handleMessage);
-  }
-
-  void _handleMessage(RemoteMessage message) {
-    if (message.data['Type'] == "data_person") {
-      Navigator.push(
-        context,
+  void handleMessage(RemoteMessage message) async {
+    if (message.data.isEmpty) return;
+    if (message.data['tosms'] != null || message.data["tosms"] != "") {
+      navigatorKey.currentState?.push(
         MaterialPageRoute(
-          builder: (context) => Testcase1Page(message.data),
-        ),
-      );
-    } else if (message.data['Type'] == "data_testcase2") {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => KeysonlyPage(message.data),
+          builder: (context) => MessagingPage(message.data['tosms']),
         ),
       );
     }
-    _messageStreamController.add(message);
   }
-  */
 
   void dispose() {
     _messageStreamController.close();

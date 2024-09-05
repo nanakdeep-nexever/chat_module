@@ -22,7 +22,10 @@ import 'package:webview_flutter/webview_flutter.dart';
 class MessagingPage extends StatefulWidget {
   final String tosms;
 
-  const MessagingPage(this.tosms, {super.key});
+  const MessagingPage(
+    this.tosms, {
+    super.key,
+  });
 
   @override
   _MessagingPageState createState() => _MessagingPageState();
@@ -76,11 +79,19 @@ class _MessagingPageState extends State<MessagingPage> {
         if (FcmQuery.docs.isNotEmpty) {
           DocumentSnapshot documentSnapshot = FcmQuery.docs.first;
           String fcmToken = documentSnapshot.get('Fcm_token') as String;
+          String message = msg ?? '';
+          if (imgurl != null && imgurl.isNotEmpty) {
+            message = 'Image';
+          }
           NotificationHandler.sendNotification(
               FCM_token: fcmToken,
               title: "New Message",
-              body: "$msg",
-              data: {'imageUrl': imgurl ?? ''});
+              body: message,
+              data: {
+                'notificationType': "chat",
+                'imageUrl': imgurl ?? '',
+                "tosms": FirebaseAuth.instance.currentUser?.email
+              });
         }
       }
 

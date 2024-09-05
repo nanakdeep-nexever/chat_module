@@ -142,7 +142,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                           fontSize: 18,
                           fontWeight: FontWeight.w500,
                           color: Colors.black),
-                      underline: SizedBox(), // Hide the underline
+                      underline: const SizedBox(),
                       onChanged: (String? newValue) {
                         setState(() {
                           _selectedValue = newValue!;

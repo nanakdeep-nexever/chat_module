@@ -175,45 +175,6 @@ class _ChatHomeState extends State<ChatHome> with WidgetsBindingObserver {
               }
             },
           ),
-          /*  PopupMenuButton<String>(
-            onSelected: (value) {
-              if (value == 'edit_profile') {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const UserProfileScreen(),
-                  ),
-                );
-              } else if (value == 'logout') {
-                context.read<LoginBloc>().add(SignOut());
-              }
-            },
-            itemBuilder: (BuildContext context) {
-              return [
-                const PopupMenuItem(
-                  value: 'edit_profile',
-                  child: Row(
-                    children: [
-                      Icon(Icons.edit, color: Colors.black),
-                      SizedBox(width: 8),
-                      Text('Edit Profile'),
-                    ],
-                  ),
-                ),
-                const PopupMenuItem(
-                  value: 'logout',
-                  child: Row(
-                    children: [
-                      Icon(Icons.logout, color: Colors.black),
-                      SizedBox(width: 8),
-                      Text('Logout'),
-                    ],
-                  ),
-                ),
-              ];
-            },
-            icon: const Icon(Icons.more_vert),
-          ),*/
         ],
       ),
       body: BlocConsumer<LoginBloc, LoginState>(
@@ -254,13 +215,15 @@ class _ChatHomeState extends State<ChatHome> with WidgetsBindingObserver {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => MessagingPage(email ?? ''),
+                          builder: (_) => MessagingPage(
+                            email ?? '',
+                          ),
                         ),
                       );
                     },
                     child: ListTile(
                       leading: CircleAvatar(
-                          radius: 25, // Adjust the radius as needed
+                          radius: 25,
                           backgroundImage: img != null && img.isNotEmpty
                               ? NetworkImage(img)
                               : null),
