@@ -10,31 +10,6 @@ import 'package:http/http.dart' as http;
 class NotificationHandler {
   static String? _token;
 
-  // static Future<void> init() async {
-  //   try {
-  //     final messaging = FirebaseMessaging.instance;
-  //
-  //     final settings = await messaging.requestPermission(
-  //       alert: true,
-  //       announcement: false,
-  //       badge: true,
-  //       carPlay: false,
-  //       criticalAlert: false,
-  //       provisional: false,
-  //       sound: true,
-  //     );
-  //
-  //     if (kDebugMode) {
-  //       print('Permission granted: ${settings.authorizationStatus}');
-  //     }
-  //
-  //     await _updateToken();
-  //   } catch (e, s) {
-  //     print("Error during initialization: $e");
-  //     print("Stack trace: $s");
-  //   }
-  // }
-
   static Future<void> sendNotification(
       {required String FCM_token,
       required String title,
