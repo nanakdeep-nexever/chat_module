@@ -10,36 +10,11 @@ import 'package:http/http.dart' as http;
 class NotificationHandler {
   static String? _token;
 
-  static Future<void> init() async {
-    try {
-      final messaging = FirebaseMessaging.instance;
-
-      final settings = await messaging.requestPermission(
-        alert: true,
-        announcement: false,
-        badge: true,
-        carPlay: false,
-        criticalAlert: false,
-        provisional: false,
-        sound: true,
-      );
-
-      if (kDebugMode) {
-        print('Permission granted: ${settings.authorizationStatus}');
-      }
-
-      await _updateToken(); // Update token on initialization
-    } catch (e, s) {
-      print("Error during initialization: $e");
-      print("Stack trace: $s");
-    }
-  }
-
   static Future<void> sendNotification(
       {required String FCM_token,
-        required String title,
-        required String body,
-        Map? data}) async {
+      required String title,
+      required String body,
+      Map? data}) async {
     final message = {
       'message': {
         'token': FCM_token,
@@ -50,6 +25,7 @@ class NotificationHandler {
         },
       }
     };
+    print('Notification sendNotification $message');
     Future<String> getAccessToken() async {
       const serviceAccountJson = r'''
     {
@@ -65,16 +41,15 @@ class NotificationHandler {
   "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-ubpp5%40my-chat-project-new.iam.gserviceaccount.com",
   "universe_domain": "googleapis.com"
 }
-
  ''';
 
       final accountCredentials =
-      ServiceAccountCredentials.fromJson(serviceAccountJson);
+          ServiceAccountCredentials.fromJson(serviceAccountJson);
 
       final scopes = ['https://www.googleapis.com/auth/firebase.messaging'];
 
       final authClient =
-      await clientViaServiceAccount(accountCredentials, scopes);
+          await clientViaServiceAccount(accountCredentials, scopes);
 
       return (authClient.credentials.accessToken.data).toString();
     }
@@ -93,7 +68,7 @@ class NotificationHandler {
       );
 
       if (response.statusCode == 200) {
-        print('Notification sent successfully');
+        print('Notification sent successfully ${response.body}');
       } else {
         print('Failed to send notification: ${response.statusCode}');
         print(response.body);
@@ -103,7 +78,7 @@ class NotificationHandler {
     }
   }
 
-  static Future<void> _updateToken() async {
+  static Future<void> updateToken() async {
     try {
       print("Fetching token...");
       final messaging = FirebaseMessaging.instance;
@@ -111,9 +86,12 @@ class NotificationHandler {
       if (_token != null) {
         if (kDebugMode) {
           print('Registration Token: $_token');
-          User? user =FirebaseAuth.instance.currentUser;
-          if(user != null){
-            FirebaseFirestore.instance.collection('users').doc(user.uid).update({"Fcm_token": _token});
+          User? user = FirebaseAuth.instance.currentUser;
+          if (user != null) {
+            FirebaseFirestore.instance
+                .collection('users')
+                .doc(user.uid)
+                .update({"Fcm_token": _token});
           }
         }
       } else {
