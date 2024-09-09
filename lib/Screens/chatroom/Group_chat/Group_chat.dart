@@ -8,6 +8,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 
 import '../../../Chat_Model/enums.dart';
 import '../../loginScreen.dart';
@@ -58,6 +59,38 @@ class _Group_ChatState extends State<Group_Chat> {
   @override
   Widget build(BuildContext context) {
     Map<String, String> _userNames = {};
+    Map<String, String> _userImages = {}; // Cache to store user profile images
+    Map<DateTime, List<QueryDocumentSnapshot>> _groupedMessages = {};
+
+
+
+    Future<String> _getUserImage(String email) async {
+      if (_userImages.containsKey(email)) {
+        return _userImages[email]!;
+      } else {
+        try {
+          var userDoc = await FirebaseFirestore.instance
+              .collection('users')
+              .where('email', isEqualTo: email)
+              .limit(1)
+              .get();
+
+          if (userDoc.docs.isNotEmpty) {
+            String imageUrl = userDoc.docs.first['img'] ?? ''; // Adjust field name if needed
+            setState(() {
+              _userImages[email] = imageUrl;
+            });
+            return imageUrl;
+          } else {
+            return '';
+          }
+        } catch (e) {
+          print('Error fetching user image: $e');
+          return '';
+        }
+      }
+    }
+
     Future<String> getUserNameByEmail(String email) async {
       try {
         var userDoc = await FirebaseFirestore.instance
@@ -116,7 +149,7 @@ class _Group_ChatState extends State<Group_Chat> {
             children: [
               Expanded(
                 child: StreamBuilder(
-                  stream: FirebaseFirestore.instance
+                  stream: _firstore
                       .collection('group')
                       .doc(widget.Groupid)
                       .collection('messages_group')
@@ -131,66 +164,127 @@ class _Group_ChatState extends State<Group_Chat> {
                         ),
                       );
                     }
+
                     final group = snapshot.data!.docs;
+
+                    // Group messages by date
+                    Map<DateTime, List<QueryDocumentSnapshot>> groupedMessages = {};
+                    for (var messageDoc in group) {
+                      final message = Group_Model.fromDocumentSnapshot(messageDoc);
+                      final date = (message.createdAt as Timestamp).toDate();
+                      final dateKey = DateTime(date.year, date.month, date.day);
+
+                      if (!groupedMessages.containsKey(dateKey)) {
+                        groupedMessages[dateKey] = [];
+                      }
+                      groupedMessages[dateKey]!.add(messageDoc);
+                    }
 
                     return ListView.builder(
                       padding: EdgeInsets.symmetric(horizontal: 8.0),
-                      itemCount: group.length,
-                      itemBuilder: (context, index) {
-                        final message = Group_Model.fromDocumentSnapshot(group[index]);
-                        final isSentByCurrentUser = FirebaseAuth.instance.currentUser!.email == message.from;
+                      itemCount: groupedMessages.length,
+                      itemBuilder: (context, dateIndex) {
+                        final dateKey = groupedMessages.keys.elementAt(dateIndex);
+                        final messagesForDate = groupedMessages[dateKey]!;
 
-                        return FutureBuilder<String>(
-                          future: _getUserName(message.from),
-                          builder: (context, nameSnapshot) {
-                            String userName = nameSnapshot.data.toString();
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Show full date as a separator
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8.0),
+                              child: Center(
+                                child: Text(
+                                  DateFormat('d MMMM yyyy').format(dateKey),
+                                  style: TextStyle(color: Colors.grey, fontSize: 12),
+                                ),
+                              ),
+                            ),
+                            ...messagesForDate.map((messageDoc) {
+                              final message = Group_Model.fromDocumentSnapshot(messageDoc);
+                              final isSentByCurrentUser = FirebaseAuth.instance.currentUser!.email == message.from;
 
+                              return FutureBuilder<Map<String, String>>(
+                                future: Future.wait([
+                                  _getUserName(message.from),
+                                  _getUserImage(message.from),
+                                ]).then((values) => {
+                                  'name': values[0],
+                                  'image': values[1],
+                                }),
+                                builder: (context, userSnapshot) {
+                                  
+                                  if (userSnapshot.hasError) {
+                                    return Text("Unable to Fetch"); // Handle null data
+                                  }
 
-                            return Align(
-                              alignment: isSentByCurrentUser ? Alignment.centerRight : Alignment.centerLeft,
-                              child: LayoutBuilder(
-                                builder: (context, constraints) {
-                                  final maxWidth = constraints.maxWidth / 1.5;
+                                  final userName = userSnapshot.data!['name'];
+                                  final userImage = userSnapshot.data!['image'];
+                                  final formattedTime = DateFormat('hh:mm a').format((message.createdAt as Timestamp).toDate());
 
-                                  return Container(
-                                    constraints: BoxConstraints(maxWidth: maxWidth),
-                                    margin: EdgeInsets.symmetric(vertical: 4.0),
-                                    padding: EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-                                    decoration: BoxDecoration(
-                                      color: isSentByCurrentUser ? Colors.blueAccent : Colors.grey[300],
-                                      borderRadius: BorderRadius.circular(12.0),
-                                    ),
-                                    child: Flexible(
-                                      fit: FlexFit.loose,
-                                      child: Column(
-                                        crossAxisAlignment: isSentByCurrentUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                                        children: [
-                                          if (!isSentByCurrentUser)
-                                            Text(
-                                              userName, // Show the user's name
-                                              style: TextStyle(
-                                                color: Colors.black54,
-                                                fontSize: 12,
-                                              ),
-                                            ),
-                                          SizedBox(height: 4),
-                                          Text(
-                                            isSentByCurrentUser
-                                                ? message.content
-                                                : message.content,
-                                            textAlign: isSentByCurrentUser ? TextAlign.end : TextAlign.start,
-                                            style: TextStyle(
-                                              color: isSentByCurrentUser ? Colors.white : Colors.black87,
-                                            ),
+                                  return Align(
+                                    alignment: isSentByCurrentUser ? Alignment.centerRight : Alignment.centerLeft,
+                                    child: LayoutBuilder(
+                                      builder: (context, constraints) {
+                                        final maxWidth = constraints.maxWidth / 1.5;
+
+                                        return Container(
+                                          constraints: BoxConstraints(maxWidth: maxWidth),
+                                          margin: EdgeInsets.symmetric(vertical: 4.0),
+                                          padding: EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+                                          decoration: BoxDecoration(
+                                            color: isSentByCurrentUser ? Colors.blueAccent : Colors.grey[300],
+                                            borderRadius: BorderRadius.circular(12.0),
                                           ),
-                                        ],
-                                      ),
+                                          child: Column(
+                                            crossAxisAlignment: isSentByCurrentUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                                            children: [
+                                              if (!isSentByCurrentUser)
+                                                Row(
+                                                  mainAxisSize: MainAxisSize.min,
+                                                  children: [
+                                                    CircleAvatar(
+                                                      backgroundImage: userImage!.isNotEmpty ? NetworkImage(userImage) : null,
+                                                      child: userImage.isEmpty ? Icon(Icons.person) : null,
+                                                    ),
+                                                    SizedBox(width: 8.0),
+                                                    Text(
+                                                      userName ?? "JOHN",
+                                                      style: TextStyle(
+                                                        color: Colors.black54,
+                                                        fontSize: 12,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              SizedBox(height: 4),
+                                              Text(
+                                                isSentByCurrentUser
+                                                    ? '${message.content}'
+                                                    : message.content,
+                                                textAlign: isSentByCurrentUser ? TextAlign.end : TextAlign.start,
+                                                style: TextStyle(
+                                                  color: isSentByCurrentUser ? Colors.white : Colors.black87,
+                                                ),
+                                              ),
+                                              SizedBox(height: 4),
+                                              Text(
+                                                formattedTime,
+                                                style: TextStyle(
+                                                  color: Colors.black54,
+                                                  fontSize: 10,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      },
                                     ),
                                   );
                                 },
-                              ),
-                            );
-                          },
+                              );
+                            }).toList(),
+                          ],
                         );
                       },
                     );
