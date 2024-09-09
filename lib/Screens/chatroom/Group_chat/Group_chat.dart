@@ -26,6 +26,7 @@ class _Group_ChatState extends State<Group_Chat> {
   Timer? _typingTimer;
   FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   FirebaseFirestore _firstore = FirebaseFirestore.instance;
+  final ScrollController _scrollController = ScrollController();
 
   Future<void> _sendMessage(String? from) async {
     if (_messageController.text.isNotEmpty) {
@@ -55,12 +56,31 @@ class _Group_ChatState extends State<Group_Chat> {
       print('Error updating typing status: $e');
     }
   }
+  @override
+  void initState() {
+    super.initState();
+    _loadMessages(); // Load your messages data
+  }
+  void _loadMessages() {
 
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
   @override
   Widget build(BuildContext context) {
     Map<String, String> _userNames = {};
     Map<String, String> _userImages = {}; // Cache to store user profile images
-    Map<DateTime, List<QueryDocumentSnapshot>> _groupedMessages = {};
+
+
 
 
 
@@ -181,6 +201,7 @@ class _Group_ChatState extends State<Group_Chat> {
                     }
 
                     return ListView.builder(
+                      controller: _scrollController,
                       padding: EdgeInsets.symmetric(horizontal: 8.0),
                       itemCount: groupedMessages.length,
                       itemBuilder: (context, dateIndex) {
@@ -377,4 +398,6 @@ class _Group_ChatState extends State<Group_Chat> {
       ),
     );
   }
+
+
 }
