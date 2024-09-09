@@ -1,5 +1,6 @@
 import 'package:chat_module/Bloc/bloc_chat_bloc.dart';
 import 'package:chat_module/Bloc/bloc_chat_state.dart';
+import 'package:chat_module/Screens/chatroom/Group_chat/groupLst.dart';
 import 'package:chat_module/Screens/chatroom/messase_room.dart';
 import 'package:chat_module/Screens/loginScreen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -28,8 +29,7 @@ class _ChatHomeState extends State<ChatHome> with WidgetsBindingObserver {
   }
 
   Future<bool> _isUserOnScreen(String email) async {
-    final userDoc =
-        _firstore.collection('users').where('email', isEqualTo: email);
+    final userDoc = _firstore.collection('users').where('email', isEqualTo: email);
     final snapshot = await userDoc.get();
     if (snapshot.docs.isNotEmpty) {
       final doc = snapshot.docs.first;
@@ -130,10 +130,8 @@ class _ChatHomeState extends State<ChatHome> with WidgetsBindingObserver {
         ),
         actions: [
           StreamBuilder<DocumentSnapshot>(
-            stream: FirebaseFirestore.instance
-                .collection("users")
-                .doc(FirebaseAuth.instance.currentUser!.uid)
-                .snapshots(),
+            stream:
+                FirebaseFirestore.instance.collection("users").doc(FirebaseAuth.instance.currentUser!.uid).snapshots(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
@@ -161,19 +159,28 @@ class _ChatHomeState extends State<ChatHome> with WidgetsBindingObserver {
                           radius: 20,
                           backgroundImage: userData['img'] != null
                               ? NetworkImage(userData['img'])
-                              : const AssetImage(
-                                      'assets/images/user_profile.jpg')
-                                  as ImageProvider,
+                              : const AssetImage('assets/images/user_profile.jpg') as ImageProvider,
                         ),
                       ),
                       const SizedBox(
-                        width: 30,
+                        width: 5,
                       )
                     ],
                   ),
                 );
               }
             },
+          ),
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => GroupList(),
+                ),
+              );
+            },
+            icon: Icon(Icons.group_add_sharp),
           ),
         ],
       ),
@@ -190,13 +197,10 @@ class _ChatHomeState extends State<ChatHome> with WidgetsBindingObserver {
           return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
             stream: _firstore
                 .collection('users')
-                .where("email",
-                    isNotEqualTo: FirebaseAuth.instance.currentUser!.email)
+                .where("email", isNotEqualTo: FirebaseAuth.instance.currentUser!.email)
                 .snapshots(),
             builder: (context, snapshot) {
-              if (!snapshot.hasData ||
-                  snapshot.data == null ||
-                  snapshot.data!.docs.isEmpty) {
+              if (!snapshot.hasData || snapshot.data == null || snapshot.data!.docs.isEmpty) {
                 return const Center(child: Text('No users found.'));
               }
 
@@ -223,14 +227,10 @@ class _ChatHomeState extends State<ChatHome> with WidgetsBindingObserver {
                     },
                     child: ListTile(
                       leading: CircleAvatar(
-                          radius: 25,
-                          backgroundImage: img != null && img.isNotEmpty
-                              ? NetworkImage(img)
-                              : null),
+                          radius: 25, backgroundImage: img != null && img.isNotEmpty ? NetworkImage(img) : null),
                       title: Text(
                         name ?? '',
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w500, fontSize: 20),
+                        style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 20),
                       ),
                       subtitle: FutureBuilder<bool>(
                         future: _isUserOnScreen(email!),

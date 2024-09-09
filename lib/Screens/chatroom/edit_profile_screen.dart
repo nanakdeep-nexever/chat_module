@@ -1,9 +1,11 @@
 import 'dart:io';
 
+import 'package:chat_module/Bloc/bloc_chat_bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 
 class UserProfileScreen extends StatefulWidget {
@@ -183,9 +185,12 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     color: Colors.grey,
                     thickness: 0.1,
                   ),
-                  const ListTile(
+                   ListTile(
+                    onTap: (){
+                      context.read<LoginBloc>().add(SignOut());
+                    },
                     leading: Icon(Icons.logout, size: 20),
-                    title: Text(
+                    title:const Text(
                       "LogOut",
                       style: TextStyle(
                         fontSize: 18,

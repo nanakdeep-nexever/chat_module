@@ -65,6 +65,21 @@ class _ChatsProfileState extends State<ChatsProfile> {
                   onTap: () {},
                 ),
                 ListTile(
+                  onLongPress: (){},
+                  leading: const Icon(
+                    Icons.group_add,
+                    color: Colors.greenAccent,
+                    size: 30,
+                  ),
+                  title: const Text(
+                    "Add to Group",
+                    style: TextStyle(
+                      fontSize: 20,
+                    ),
+                  ),
+                  onTap: () {},
+                ),
+                ListTile(
                   leading: const Icon(
                     Icons.person,
                     color: Colors.red,
