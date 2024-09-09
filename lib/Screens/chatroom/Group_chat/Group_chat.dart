@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:chat_module/Bloc/bloc_chat_bloc.dart';
 import 'package:chat_module/Bloc/bloc_chat_state.dart';
 import 'package:chat_module/Chat_Model/utils/Group_model.dart';
+import 'package:chat_module/Screens/chatroom/Group_chat/group_profile.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -14,7 +14,8 @@ import '../../../Chat_Model/enums.dart';
 import '../../loginScreen.dart';
 
 class Group_Chat extends StatefulWidget {
-  String Groupid,Groupname;
+  String Groupid, Groupname;
+
   Group_Chat({super.key, required this.Groupid, required this.Groupname});
 
   @override
@@ -27,6 +28,8 @@ class _Group_ChatState extends State<Group_Chat> {
   FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   FirebaseFirestore _firstore = FirebaseFirestore.instance;
   final ScrollController _scrollController = ScrollController();
+  var maxScrollExtent = 0.0;
+  bool isScroll = false;
 
   Future<void> _sendMessage(String? from) async {
     if (_messageController.text.isNotEmpty) {
@@ -56,44 +59,25 @@ class _Group_ChatState extends State<Group_Chat> {
       print('Error updating typing status: $e');
     }
   }
-  @override
-  void initState() {
-    super.initState();
-    _loadMessages(); // Load your messages data
-  }
-  void _loadMessages() {
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients) {
-        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
-      }
-    });
-  }
 
   @override
   void dispose() {
     _scrollController.dispose();
     super.dispose();
   }
+
   @override
   Widget build(BuildContext context) {
     Map<String, String> _userNames = {};
     Map<String, String> _userImages = {}; // Cache to store user profile images
-
-
-
-
 
     Future<String> _getUserImage(String email) async {
       if (_userImages.containsKey(email)) {
         return _userImages[email]!;
       } else {
         try {
-          var userDoc = await FirebaseFirestore.instance
-              .collection('users')
-              .where('email', isEqualTo: email)
-              .limit(1)
-              .get();
+          var userDoc =
+              await FirebaseFirestore.instance.collection('users').where('email', isEqualTo: email).limit(1).get();
 
           if (userDoc.docs.isNotEmpty) {
             String imageUrl = userDoc.docs.first['img'] ?? ''; // Adjust field name if needed
@@ -113,11 +97,8 @@ class _Group_ChatState extends State<Group_Chat> {
 
     Future<String> getUserNameByEmail(String email) async {
       try {
-        var userDoc = await FirebaseFirestore.instance
-            .collection('users')
-            .where('email', isEqualTo: email)
-            .limit(1)
-            .get();
+        var userDoc =
+            await FirebaseFirestore.instance.collection('users').where('email', isEqualTo: email).limit(1).get();
 
         if (userDoc.docs.isNotEmpty) {
           return userDoc.docs.first['name'] ?? 'Unknown'; // Adjust field name if needed
@@ -141,17 +122,63 @@ class _Group_ChatState extends State<Group_Chat> {
         return name;
       }
     }
+
+    Future<void> scrollToLastIndex() async {
+      final position = _scrollController.position;
+      _scrollController.position.maxScrollExtent;
+
+      if (maxScrollExtent < _scrollController.position.maxScrollExtent) {
+        maxScrollExtent = _scrollController.position.maxScrollExtent;
+        if (position.hasPixels) {
+          _scrollController.jumpTo(
+            position.maxScrollExtent,
+          );
+        }
+      }
+
+      /*   await Future.delayed(const Duration(seconds: 2));
+
+      if (isScroll == true) {
+        return;
+      }
+      isScroll = true;
+
+      if (position.hasPixels) {
+        _scrollController.jumpTo(
+          position.maxScrollExtent ?? 0,
+        );
+      }*/
+    }
+
+    initalData() {
+      _firstore
+          .collection('group')
+          .doc(widget.Groupid)
+          .collection('messages_group')
+          .orderBy('createdAt', descending: false)
+          .snapshots();
+      scrollToLastIndex();
+    }
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.Groupname),
+        title: InkWell(
+          child: Text(widget.Groupname),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => GroupProfile(GRoupid: widget.Groupid),
+              ),
+            );
+          },
+        ),
         backgroundColor: Colors.blueAccent,
         elevation: 0,
         actions: [
           IconButton(
-            icon: Icon(Icons.exit_to_app),
-            onPressed: () {
-
-            },
+            icon: const Icon(Icons.exit_to_app),
+            onPressed: () {},
           ),
         ],
       ),
@@ -169,6 +196,7 @@ class _Group_ChatState extends State<Group_Chat> {
             children: [
               Expanded(
                 child: StreamBuilder(
+                  initialData: initalData(),
                   stream: _firstore
                       .collection('group')
                       .doc(widget.Groupid)
@@ -177,7 +205,7 @@ class _Group_ChatState extends State<Group_Chat> {
                       .snapshots(),
                   builder: (context, snapshot) {
                     if (!snapshot.hasData || snapshot.data == null || snapshot.data!.docs.isEmpty) {
-                      return Center(
+                      return const Center(
                         child: Text(
                           'No messages yet...',
                           style: TextStyle(fontSize: 16, color: Colors.grey),
@@ -187,22 +215,22 @@ class _Group_ChatState extends State<Group_Chat> {
 
                     final group = snapshot.data!.docs;
 
-                    // Group messages by date
                     Map<DateTime, List<QueryDocumentSnapshot>> groupedMessages = {};
                     for (var messageDoc in group) {
                       final message = Group_Model.fromDocumentSnapshot(messageDoc);
-                      final date = (message.createdAt as Timestamp).toDate();
+                      final date = (message.createdAt).toDate();
                       final dateKey = DateTime(date.year, date.month, date.day);
 
                       if (!groupedMessages.containsKey(dateKey)) {
                         groupedMessages[dateKey] = [];
                       }
+
                       groupedMessages[dateKey]!.add(messageDoc);
                     }
 
                     return ListView.builder(
                       controller: _scrollController,
-                      padding: EdgeInsets.symmetric(horizontal: 8.0),
+                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
                       itemCount: groupedMessages.length,
                       itemBuilder: (context, dateIndex) {
                         final dateKey = groupedMessages.keys.elementAt(dateIndex);
@@ -211,13 +239,12 @@ class _Group_ChatState extends State<Group_Chat> {
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Show full date as a separator
                             Padding(
                               padding: const EdgeInsets.symmetric(vertical: 8.0),
                               child: Center(
                                 child: Text(
                                   DateFormat('d MMMM yyyy').format(dateKey),
-                                  style: TextStyle(color: Colors.grey, fontSize: 12),
+                                  style: const TextStyle(color: Colors.grey, fontSize: 12),
                                 ),
                               ),
                             ),
@@ -230,18 +257,18 @@ class _Group_ChatState extends State<Group_Chat> {
                                   _getUserName(message.from),
                                   _getUserImage(message.from),
                                 ]).then((values) => {
-                                  'name': values[0],
-                                  'image': values[1],
-                                }),
+                                      'name': values[0],
+                                      'image': values[1],
+                                    }),
                                 builder: (context, userSnapshot) {
-                                  
                                   if (userSnapshot.hasError) {
-                                    return Text("Unable to Fetch"); // Handle null data
+                                    return const Text("Unable to Fetch"); // Handle null data
                                   }
 
-                                  final userName = userSnapshot.data!['name'];
-                                  final userImage = userSnapshot.data!['image'];
-                                  final formattedTime = DateFormat('hh:mm a').format((message.createdAt as Timestamp).toDate());
+                                  final userName = userSnapshot.data?['name'] ?? "";
+                                  final userImage = userSnapshot.data?['image'] ?? "";
+                                  final formattedTime =
+                                      DateFormat('hh:mm a').format((message.createdAt as Timestamp).toDate());
 
                                   return Align(
                                     alignment: isSentByCurrentUser ? Alignment.centerRight : Alignment.centerLeft,
@@ -251,47 +278,47 @@ class _Group_ChatState extends State<Group_Chat> {
 
                                         return Container(
                                           constraints: BoxConstraints(maxWidth: maxWidth),
-                                          margin: EdgeInsets.symmetric(vertical: 4.0),
-                                          padding: EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+                                          margin: const EdgeInsets.symmetric(vertical: 4.0),
+                                          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
                                           decoration: BoxDecoration(
                                             color: isSentByCurrentUser ? Colors.blueAccent : Colors.grey[300],
                                             borderRadius: BorderRadius.circular(12.0),
                                           ),
                                           child: Column(
-                                            crossAxisAlignment: isSentByCurrentUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                isSentByCurrentUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                                             children: [
                                               if (!isSentByCurrentUser)
                                                 Row(
                                                   mainAxisSize: MainAxisSize.min,
                                                   children: [
                                                     CircleAvatar(
-                                                      backgroundImage: userImage!.isNotEmpty ? NetworkImage(userImage) : null,
-                                                      child: userImage.isEmpty ? Icon(Icons.person) : null,
+                                                      backgroundImage:
+                                                          userImage!.isNotEmpty ? NetworkImage(userImage) : null,
+                                                      child: userImage.isEmpty ? const Icon(Icons.person) : null,
                                                     ),
-                                                    SizedBox(width: 8.0),
+                                                    const SizedBox(width: 8.0),
                                                     Text(
                                                       userName ?? "JOHN",
-                                                      style: TextStyle(
+                                                      style: const TextStyle(
                                                         color: Colors.black54,
                                                         fontSize: 12,
                                                       ),
                                                     ),
                                                   ],
                                                 ),
-                                              SizedBox(height: 4),
+                                              const SizedBox(height: 4),
                                               Text(
-                                                isSentByCurrentUser
-                                                    ? '${message.content}'
-                                                    : message.content,
+                                                isSentByCurrentUser ? '${message.content}' : message.content,
                                                 textAlign: isSentByCurrentUser ? TextAlign.end : TextAlign.start,
                                                 style: TextStyle(
                                                   color: isSentByCurrentUser ? Colors.white : Colors.black87,
                                                 ),
                                               ),
-                                              SizedBox(height: 4),
+                                              const SizedBox(height: 4),
                                               Text(
                                                 formattedTime,
-                                                style: TextStyle(
+                                                style: const TextStyle(
                                                   color: Colors.black54,
                                                   fontSize: 10,
                                                 ),
@@ -327,8 +354,8 @@ class _Group_ChatState extends State<Group_Chat> {
         children: <Widget>[
           Expanded(
               child: TextField(
-                maxLines: null,
-          minLines: 1,
+            maxLines: null,
+            minLines: 1,
             controller: _messageController,
             onChanged: (string) {
               if (_typingTimer?.isActive ?? false) _typingTimer!.cancel();
@@ -362,9 +389,7 @@ class _Group_ChatState extends State<Group_Chat> {
               ),
               prefixIcon: IconButton(
                 icon: Icon(Icons.emoji_emotions_outlined, color: Colors.grey[600]),
-                onPressed: () {
-
-                },
+                onPressed: () {},
               ),
               suffixIcon: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8.0),
@@ -398,6 +423,4 @@ class _Group_ChatState extends State<Group_Chat> {
       ),
     );
   }
-
-
 }

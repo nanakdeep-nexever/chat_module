@@ -55,3 +55,66 @@ class Group_Model {
     return Group_Model.fromMap(data);
   }
 }
+
+
+
+
+class UserModel {
+  final String? fcmToken;
+  final String? lastMessage;
+  final String? email;
+  final String? img;
+  final String? name;
+  final String? onScreen;
+  final bool? status;
+  final bool? typing;
+  final int? unread;
+
+  UserModel({
+    this.fcmToken,
+    this.lastMessage,
+    this.email,
+    this.img,
+    this.name,
+    this.onScreen,
+    this.status,
+    this.typing,
+    this.unread,
+  });
+
+
+  factory UserModel.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    return UserModel(
+      fcmToken: data['fcmToken'] as String?,
+      lastMessage: data['lastMessage'] as String?,
+      email: data['email'] as String?,
+      img: data['img'] as String?,
+      name: data['name'] as String?,
+      onScreen: data['onScreen'] as String?,
+      status: data['status'] as bool?,
+      typing: data['typing'] as bool?,
+      unread: data['unread'] as int?,
+    );
+  }
+
+
+  Map<String, dynamic> toFirestore() {
+    return {
+      'fcmToken': fcmToken,
+      'lastMessage': lastMessage,
+      'email': email,
+      'img': img,
+      'name': name,
+      'onScreen': onScreen,
+      'status': status,
+      'typing': typing,
+      'unread': unread,
+    };
+  }
+
+  @override
+  String toString() {
+    return 'UserModel(fcmToken: $fcmToken, lastMessage: $lastMessage, email: $email, img: $img, name: $name, onScreen: $onScreen, status: $status, typing: $typing, unread: $unread)';
+  }
+}
