@@ -89,7 +89,8 @@ class _ChatsProfileState extends State<ChatsProfile> {
                     'Report ${widget.name}',
                     style: const TextStyle(color: Colors.red, fontSize: 20),
                   ),
-                  onTap: () {},
+                  onTap: () {
+                  },
                 ),
                 // Add more ListTile widgets as needed
               ],

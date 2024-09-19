@@ -5,6 +5,7 @@ enum MessageType {
   file,
   link,
   document,
+  gif
 }
 
 enum MediaType { image, video, document }

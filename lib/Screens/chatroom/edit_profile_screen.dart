@@ -15,13 +15,14 @@ class UserProfileScreen extends StatefulWidget {
 
 class _UserProfileScreenState extends State<UserProfileScreen> {
   File? image;
-  String _selectedValue = "Sleeping"; // Default selected value
+  String _selectedValue = "Sleeping";
   final List<String> _aboutOptions = [
     "Sleeping",
     "Eating",
     "Working",
     "Traveling",
   ];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -127,7 +128,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       ),
                     ),
                     subtitle: Text(
-                      _selectedValue, // Display the selected value
+                      _selectedValue,
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w500,
@@ -223,7 +224,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   void _showEditNameModal(BuildContext context, String currentName) {
     final TextEditingController nameController =
         TextEditingController(text: currentName);
-
     showBottomSheet(
       context: context,
       builder: (BuildContext context) {
@@ -304,7 +304,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   }
 
   void pickImage(ImageSource source) async {
-    final pickedImage = await ImagePicker().pickImage(source: source);
+    final pickedImage = await ImagePicker().pickImage(source: source,);
     if (pickedImage != null) {
       image = File(pickedImage.path);
       setState(() {});

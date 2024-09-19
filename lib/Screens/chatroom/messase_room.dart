@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:chat_module/Bloc/bloc_chat_bloc.dart';
 import 'package:chat_module/Bloc/bloc_chat_state.dart';
 import 'package:chat_module/Chat_Model/chatModel.dart';
@@ -9,12 +10,15 @@ import 'package:chat_module/Notification_handel/Notification_handle.dart';
 import 'package:chat_module/Screens/chatroom/chats_profile.dart';
 import 'package:chat_module/Screens/loginScreen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:gif_view/gif_view.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter/foundation.dart' as foundation;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:video_player/video_player.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -36,7 +40,15 @@ class _MessagingPageState extends State<MessagingPage> {
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   final TextEditingController _messageController = TextEditingController();
   final DateFormat _timeFormatter = DateFormat('HH:mm');
+   String gifUrl = 'https://media.giphy.com/media/ICOgUNlE1I8tQ/giphy.gif';
   Timer? _typingTimer;
+  bool _isEmojiVisible = false;
+
+  void _onEmojiSelected(Emoji emoji) {
+    _messageController.text += emoji.emoji;
+  }
+
+
 
   updateLastM(String tosms, String from, String? msg, String? imgurl) async {
     String onScreenStatus = '';
@@ -266,7 +278,7 @@ class _MessagingPageState extends State<MessagingPage> {
         );
       }
     } else {
-      // Handle the case where the user denies permissions
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
             content: Text("Camera and storage permissions are required.")),
@@ -325,12 +337,12 @@ class _MessagingPageState extends State<MessagingPage> {
               const SizedBox(height: 16.0),
               ListTile(
                 leading: const Icon(Icons.image, color: Colors.blue),
-                title: Text('Image'),
+                title: const Text('Image'),
                 onTap: () => Navigator.of(context).pop(MediaType.image),
               ),
               ListTile(
                 leading: const Icon(Icons.videocam, color: Colors.green),
-                title: Text('Video'),
+                title: const Text('Video'),
                 onTap: () => Navigator.of(context).pop(MediaType.video),
               ),
               ListTile(
@@ -577,88 +589,137 @@ class _MessagingPageState extends State<MessagingPage> {
     );
   }
 
+
+
+
+
+
   Padding MessegeType_bottom() {
     return Padding(
       padding: const EdgeInsets.all(8.0),
-      child: Row(
-        children: <Widget>[
-          Expanded(
-              child: TextFormField(
-            maxLines: null,
-            minLines: 1,
-            textInputAction: TextInputAction.newline,
-            controller: _messageController,
-            onChanged: (string) {
-              if (_typingTimer?.isActive ?? false) _typingTimer!.cancel();
+      child: Column(
+        children: [
+          Row(
+            children: <Widget>[
+              Expanded(
+                  child: TextFormField(
+                maxLines: null,
+                minLines: 1,
+                textInputAction: TextInputAction.newline,
+                controller: _messageController,
+                onChanged: (string) {
+                  if (_typingTimer?.isActive ?? false) _typingTimer!.cancel();
 
-              _setTyping(true);
+                  _setTyping(true);
 
-              _typingTimer = Timer(const Duration(seconds: 1), () {
-                _setTyping(false);
-              });
-            },
-            decoration: InputDecoration(
-              filled: true,
-              fillColor: Colors.grey[200],
-              hintText: 'Message...',
-              hintStyle: TextStyle(color: Colors.grey[600]),
-              contentPadding:
-                  const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(30.0),
-                borderSide: BorderSide.none,
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(30.0),
-                borderSide: BorderSide.none,
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(30.0),
-                borderSide: const BorderSide(
-                  color: Colors.blue,
-                  width: 2.0,
+                  _typingTimer = Timer(const Duration(seconds: 1), () {
+                    _setTyping(false);
+                  });
+                },
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: Colors.grey[200],
+                  hintText: 'Message...',
+                  hintStyle: TextStyle(color: Colors.grey[600]),
+                  contentPadding:
+                      const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30.0),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30.0),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30.0),
+                    borderSide: const BorderSide(
+                      color: Colors.blue,
+                      width: 2.0,
+                    ),
+                  ),
+                  prefixIcon: IconButton(
+                    icon: Icon(_isEmojiVisible?Icons.keyboard_alt:Icons.emoji_emotions_outlined,
+                        color: Colors.grey[600]),
+                    onPressed: () {
+                      setState(() {
+                        _isEmojiVisible = !_isEmojiVisible;
+                      });
+                    },
+                  ),
+                  suffixIcon: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.attach_file, color: Colors.grey[600]),
+                          onPressed: () {
+                            String? from = _firebaseAuth.currentUser?.email;
+                            uploadMediaAndSaveReference(from);
+                          },
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.camera_alt, color: Colors.grey[600]),
+                          onPressed: () {
+                            String? from = _firebaseAuth.currentUser?.email;
+                            openCamera(from);
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
+              )),
+              IconButton(
+                icon: const Icon(Icons.send),
+                onPressed: () {
+                  String? from = _firebaseAuth.currentUser?.email;
+                  _sendMessage(from);
+                },
               ),
-              prefixIcon: IconButton(
-                icon: Icon(Icons.emoji_emotions_outlined,
-                    color: Colors.grey[600]),
-                onPressed: () {},
-              ),
-              suffixIcon: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: Icon(Icons.attach_file, color: Colors.grey[600]),
-                      onPressed: () {
-                        String? from = _firebaseAuth.currentUser?.email;
-                        uploadMediaAndSaveReference(from);
-                      },
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.camera_alt, color: Colors.grey[600]),
-                      onPressed: () {
-                        String? from = _firebaseAuth.currentUser?.email;
-                        openCamera(from);
-                      },
-                    ),
-                  ],
+            ],
+          ),
+          Offstage(
+            offstage: !_isEmojiVisible,
+            child: SizedBox(
+              height: 256, // Adjust the height if needed
+              child: EmojiPicker(
+                onEmojiSelected: (category, emoji) {
+                  _onEmojiSelected(emoji);
+                },
+                onBackspacePressed: () {
+                  // Handle backspace if needed
+                },
+                textEditingController: _messageController,
+                config: Config(
+                  height: 256,
+                  checkPlatformCompatibility: true,
+                  emojiViewConfig: EmojiViewConfig(
+                    emojiSizeMax: 28 *
+                        (foundation.defaultTargetPlatform == TargetPlatform.iOS
+                            ? 1.20
+                            : 1.0),
+                  ),
+                  swapCategoryAndBottomBar: false,
+                  skinToneConfig: const SkinToneConfig(),
+                  categoryViewConfig: const CategoryViewConfig(),
+                  bottomActionBarConfig: const BottomActionBarConfig(),
+                  searchViewConfig: const SearchViewConfig(),
                 ),
               ),
             ),
-          )),
-          IconButton(
-            icon: const Icon(Icons.send),
-            onPressed: () {
-              String? from = _firebaseAuth.currentUser?.email;
-              _sendMessage(from);
-            },
           ),
+
+
         ],
       ),
+
+
     );
   }
+
+
 
   ListView buildListView(List<QueryDocumentSnapshot<Object?>>? messages) {
     return ListView.builder(
@@ -756,19 +817,85 @@ class _MessagingPageState extends State<MessagingPage> {
                           ),
                         ),
                       if (message.type == MessageType.image)
-                        Image.network(
-                          message.content,
-                          height: 75,
-                          width: 65,
-                          errorBuilder: (context, error, stackTrace) =>
-                              const Icon(Icons.error),
+                        GestureDetector(onTap: (){
+                          showImagePreview(context, message.content);
+                        },
+                          child: Container(
+                            height: 200,
+                            width: 200,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[200], // Background color
+                              borderRadius: BorderRadius.circular(10), // Rounded corners
+                              border: Border.all(
+                                color: Colors.white, // Border color
+                                width: 2, // Border width
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.3), // Shadow color
+                                  spreadRadius: 2, // Shadow spread
+                                  blurRadius: 4, // Shadow blur radius
+                                  offset: Offset(0, 2), // Shadow offset
+                                ),
+                              ],
+                            ),
+                            child: AspectRatio(
+                              aspectRatio: 16 / 9,
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child: Image.network(
+                                  message.content,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) => Center(
+                                    child: Icon(
+                                      Icons.error,
+                                      color: Colors.red, // Error icon color
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
+
+
                       if (message.type == MessageType.video)
-                        SizedBox(
-                          width: 100,
-                          height: 80,
-                          child: VideoPlayerWidget(url: message.content),
+                        Container(
+
+                          decoration: BoxDecoration(
+                            color: Colors.black12, // Background color
+                            borderRadius: BorderRadius.circular(15), // Rounded corners
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.withOpacity(0.5), // Shadow color
+                                spreadRadius: 2,
+                                blurRadius: 2,
+                                offset: Offset(0, 3), // Position of the shadow
+                              ),
+                            ],
+                            border: Border.all(
+                              color: Colors.white, // Border color
+                              width: 2, // Border thickness
+                            ),
+                          ),
+                          child: SizedBox(
+                            width: MediaQuery.of(context).size.width * 0.5,
+
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(15),
+                              child: VideoPlayerWidget(url: message.content),
+                            ),
+                          ),
                         ),
+
+
+                      if(message.type==MessageType.gif)
+                        GifView.network(
+                         message.content,
+                          height: 200,
+                          width: 200,
+                        ),
+
                       if (message.type == MessageType.document)
                         const Icon(Icons.description, size: 40),
                       Text(
@@ -785,27 +912,73 @@ class _MessagingPageState extends State<MessagingPage> {
       },
     );
   }
-
-  void _showVideoDialog(String content) {
-    showDialog(
+  void showImagePreview(BuildContext context, String imageUrl) {
+    showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       builder: (BuildContext context) {
-        return AlertDialog(
-          content: SizedBox(
-            width: double.infinity,
-            height: 300,
-            child: VideoPlayerWidget(url: content),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Close'),
-              onPressed: () => Navigator.of(context).pop(),
+        return GestureDetector(
+          onTap: () => Navigator.of(context).pop(),
+          child: Container(
+            color: Colors.black.withOpacity(0.8),
+            child: Center(
+              child: SizedBox(
+                width: double.infinity,
+                height: MediaQuery.of(context).size.height * 0.8,
+                child: Image.network(
+                  imageUrl,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) => Center(
+                    child: Icon(
+                      Icons.error,
+                      color: Colors.red, // Error icon color
+                    ),
+                  ),
+                ),
+              ),
             ),
-          ],
+          ),
         );
       },
     );
   }
+  void _showVideoDialog(String content) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (BuildContext context) {
+        return Scaffold(
+          body: Stack(
+            children: [
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0), // Add padding around the video
+                  child: AspectRatio(
+                    aspectRatio: 16 / 9, // Ensure proper aspect ratio for the video
+                    child: VideoPlayerWidget(url: content),
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 16.0,
+                right: 16.0,
+                child: GestureDetector(
+                  onTap: () => Navigator.of(context).pop(),
+                  child: Icon(Icons.close, size: 30.0, color: Colors.black),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+
+
+
+
+
 }
 
 class VideoPlayerWidget extends StatefulWidget {
@@ -819,21 +992,27 @@ class VideoPlayerWidget extends StatefulWidget {
 
 class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
   late VideoPlayerController _controller;
+  bool _isPlaying = false;
 
   @override
   void initState() {
     super.initState();
-    _controller = VideoPlayerController.network(widget.url)
+    _controller = VideoPlayerController.networkUrl(Uri.parse(widget.url))
       ..addListener(() {
         if (_controller.value.hasError) {
           print('Video Player Error: ${_controller.value.errorDescription}');
         }
+        setState(() {
+          _isPlaying = _controller.value.isPlaying;
+        });
       })
       ..initialize().then((_) {
         if (mounted) {
           setState(() {});
+
+          _controller.play();
+          _controller.setLooping(true);
         }
-        _controller.pause();
       }).catchError((e) {
         print('Error initializing video: $e');
       });
@@ -845,13 +1024,39 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
     super.dispose();
   }
 
+  void _togglePlayPause() {
+    setState(() {
+      if (_isPlaying) {
+        _controller.pause();
+      } else {
+        _controller.play();
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (_controller.value.hasError) {
+      return Center(child: Text('Error loading video: ${_controller.value.errorDescription}'));
+    }
+
     return _controller.value.isInitialized
-        ? AspectRatio(
-            aspectRatio: _controller.value.aspectRatio,
-            child: VideoPlayer(_controller),
-          )
+        ? Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        AspectRatio(
+          aspectRatio: _controller.value.aspectRatio,
+          child: VideoPlayer(_controller),
+        ),
+      /*  VideoProgressIndicator(_controller, allowScrubbing: true),*/
+       /* IconButton(
+          icon: Icon(_isPlaying ? Icons.pause : Icons.play_arrow),
+          onPressed: _togglePlayPause,
+        ),*/
+      ],
+    )
         : const Center(child: CircularProgressIndicator());
   }
 }
+
+

@@ -1,8 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:chat_module/Notification_handel/Notification_handle.dart';
-import 'package:chat_module/main.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -10,6 +8,8 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 
 import '../Screens/chatroom/messase_room.dart';
+import '../main.dart';
+import 'Notification_handle.dart';
 
 class NotificationService {
   NotificationService._();
@@ -70,13 +70,43 @@ class NotificationService {
     NotificationHandler.updateToken();
   }
 
-  void onDidReceiveNotificationResponse(NotificationResponse response) {
+  void onDidReceiveNotificationResponse(NotificationResponse response) async {
     print(
         "onDidReceiveNotificationResponse payload----chat---${response.payload}");
+
     var payload = jsonDecode(response.payload ?? '{}') as Map<String, dynamic>;
+      print("----payload data---$payload");
+
     if (response.notificationResponseType ==
         NotificationResponseType.selectedNotification) {
+      print("Notification tapped without inline reply.");
       handleMessage(payload);
+    }
+
+
+
+    /*else if (response.notificationResponseType ==
+            NotificationResponseType.selectedNotificationAction &&
+        response.actionId == 'reply_action') {
+      String replyText = response.input ?? '';
+      print('User replied: $replyText');
+
+      var updatedPayload = Map<String, dynamic>.from(payload);
+      updatedPayload['reply'] = replyText;
+
+      handleMessage(
+        updatedPayload,
+      );
+    }*/
+     if (response.notificationResponseType ==
+        NotificationResponseType.selectedNotificationAction &&
+        response.actionId == 'reply_action') {
+
+      String replyText = response.input ?? '';
+      print('User replied: $replyText');
+
+
+      handleReplyAction(payload, replyText);
     }
   }
 
@@ -108,6 +138,7 @@ class NotificationService {
       if (imagePath.isNotEmpty && File(imagePath).existsSync()) {
         bigPictureStyleInformation =
             BigPictureStyleInformation(FilePathAndroidBitmap(imagePath));
+
       }
     }
 
@@ -120,7 +151,21 @@ class NotificationService {
       importance: Importance.max,
       priority: Priority.high,
       ticker: 'ticker',
+      playSound: true,
+      sound: const RawResourceAndroidNotificationSound('sounds'),
       styleInformation: bigPictureStyleInformation,
+      actions: <AndroidNotificationAction>[
+        const AndroidNotificationAction(
+          'reply_action',
+          'Reply',
+          inputs: <AndroidNotificationActionInput>[
+            AndroidNotificationActionInput(
+              label: 'Type your message',
+              allowFreeFormInput: true,
+            )
+          ],
+        ),
+      ],
     );
 
     NotificationDetails platformChannelSpecifics = NotificationDetails(
@@ -148,6 +193,42 @@ class NotificationService {
       );
     }
   }
+
+
+
+  void handleReplyAction(Map<String, dynamic> payload, String replyText) {
+
+    var updatedPayload = Map<String, dynamic>.from(payload);
+    updatedPayload['reply'] = replyText;
+
+
+    print('Processing user reply: $replyText');
+    print('Updated payload: $updatedPayload');
+
+
+    processPayload(updatedPayload);
+  }
+
+  void processPayload(Map<String, dynamic> data) {
+    if (data.isEmpty) return;
+
+
+    if (data.containsKey('reply')) {
+      print('Reply received in payload: ${data['reply']}');
+
+    }
+
+    if (data['tosms'] != null && data['tosms'].isNotEmpty) {
+      // Navigate to the messaging page
+      navigatorKey.currentState?.push(
+        MaterialPageRoute(
+          builder: (context) => MessagingPage(data['tosms']),
+        ),
+      );
+    }
+  }
+
+
 }
 
 @pragma('vm:entry-point')
