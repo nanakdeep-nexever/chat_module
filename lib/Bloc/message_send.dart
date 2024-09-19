@@ -19,7 +19,7 @@ class MessagingBloc {
     _messageStreamController.add(message);
   }
 
-  // Top-level or static function for background message handling
+ @pragma('vm:entry-point')
   static Future<void> _firebaseMessagingBackgroundHandler(
       RemoteMessage message) async {
     // Background message handling
