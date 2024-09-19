@@ -31,11 +31,11 @@ class _Login_ScreenState extends State<Login_Screen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Padding(
-        padding: EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16.0),
         child: Center(
           child: SingleChildScrollView(
             child: ConstrainedBox(
-              constraints: BoxConstraints(
+              constraints: const BoxConstraints(
                 maxWidth: 400,
               ),
               child: Column(
@@ -48,7 +48,7 @@ class _Login_ScreenState extends State<Login_Screen> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
                   Form(
                     key: _formKey,
                     child: Column(
@@ -72,7 +72,7 @@ class _Login_ScreenState extends State<Login_Screen> {
                             return null;
                           },
                         ),
-                        SizedBox(height: 16),
+                        const SizedBox(height: 16),
                         TextFormField(
                           controller: _passwordController,
                           decoration: const InputDecoration(
@@ -105,13 +105,13 @@ class _Login_ScreenState extends State<Login_Screen> {
                             } else if (state is AuthAuthenticated) {
                               Navigator.push(
                                 context,
-                                MaterialPageRoute(builder: (_) => ChatHome()),
+                                MaterialPageRoute(builder: (_) => const ChatHome()),
                               );
                             }
                           },
                           builder: (context, state) {
                             if (state is AuthLoading) {
-                              return CircularProgressIndicator();
+                              return const CircularProgressIndicator();
                             }
                             return SizedBox(
                               width: double.infinity,
@@ -125,7 +125,7 @@ class _Login_ScreenState extends State<Login_Screen> {
                                             email: email, password: password));
                                   }
                                 },
-                                child: Text('Login'),
+                                child: const Text('Login'),
                               ),
                             );
                           },
@@ -135,10 +135,10 @@ class _Login_ScreenState extends State<Login_Screen> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                  builder: (_) => Register_Screen()),
+                                  builder: (_) => const Register_Screen()),
                             );
                           },
-                          child: Text("Not Registerd?"),
+                          child: const Text("Not Registerd?"),
                         ),
                       ],
                     ),

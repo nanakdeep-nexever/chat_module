@@ -43,7 +43,7 @@ class _Register_ScreenState extends State<Register_Screen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Padding(
-        padding: EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16.0),
         child: Center(
           child: SingleChildScrollView(
             child: ConstrainedBox(
@@ -73,13 +73,13 @@ class _Register_ScreenState extends State<Register_Screen> {
                               ? FileImage(File(_selectedImagePath!))
                               : null,
                           child: _selectedImagePath == null
-                              ? Icon(Icons.camera_alt, size: 50)
+                              ? const Icon(Icons.camera_alt, size: 50)
                               : null,
                         ),
                       );
                     },
                   ),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
                   Form(
                     key: _formKey,
                     child: Column(
@@ -98,7 +98,7 @@ class _Register_ScreenState extends State<Register_Screen> {
                             return null;
                           },
                         ),
-                        SizedBox(height: 16),
+                        const SizedBox(height: 16),
                         TextFormField(
                           controller: _emailController,
                           onChanged: _onEmailChanged,
@@ -118,7 +118,7 @@ class _Register_ScreenState extends State<Register_Screen> {
                             return null;
                           },
                         ),
-                        SizedBox(height: 16),
+                        const SizedBox(height: 16),
                         TextFormField(
                           controller: _passwordController,
                           onChanged: _onPasswordChanged,
@@ -138,7 +138,7 @@ class _Register_ScreenState extends State<Register_Screen> {
                             return null;
                           },
                         ),
-                        SizedBox(height: 16),
+                        const SizedBox(height: 16),
                         TextFormField(
                           controller: _confirmPasswordController,
                           decoration: const InputDecoration(
@@ -167,7 +167,7 @@ class _Register_ScreenState extends State<Register_Screen> {
                             } else if (state is AuthAuthenticated) {
                               Navigator.push(
                                 context,
-                                MaterialPageRoute(builder: (_) => ChatHome()),
+                                MaterialPageRoute(builder: (_) => const ChatHome()),
                               );
                             } else if (state is ImagePicked) {
                               setState(() {
