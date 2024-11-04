@@ -846,7 +846,7 @@ class _MessagingPageState extends State<MessagingPage> {
                                 child: Image.network(
                                   message.content,
                                   fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) => Center(
+                                  errorBuilder: (context, error, stackTrace) => const Center(
                                     child: Icon(
                                       Icons.error,
                                       color: Colors.red, // Error icon color
